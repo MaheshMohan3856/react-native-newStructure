@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "329973517308",
+    "firebase_url": "https://whateveruwant-b092b.firebaseio.com",
+    "project_id": "whateveruwant-b092b",
+    "storage_bucket": "whateveruwant-b092b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:329973517308:android:353a07ab9e861a9c08c079",
+        "android_client_info": {
+          "package_name": "com.wuwapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "329973517308-ua0ft8moek6kchc72n796gv0mifvkoi0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxDBKwiFF23tjkUGJJKKR9hMpFMhkPdcU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "329973517308-ua0ft8moek6kchc72n796gv0mifvkoi0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
