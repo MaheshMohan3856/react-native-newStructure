@@ -6,8 +6,8 @@
  * @flow strict-local
  */
 
-import React, {useState,useRef} from 'react';
-import {StatusBar, Image, TouchableOpacity} from 'react-native';
+import React, {useState,useRef, useEffect} from 'react';
+import {StatusBar, Image, TouchableOpacity,KeyboardAvoidingView} from 'react-native';
 import {
   Container,
   View,
@@ -31,9 +31,10 @@ import {common} from '../css/common';
 import CountryPicker from 'react-native-country-picker-modal';
 import {showLoader, hideLoader} from '../actions/common/commonActions';
 import {appConfig} from '../appConfig';
-import {login} from '../actions/login/loginActions';
+import {login,signup} from '../actions/login/loginActions';
 import HeaderPage from './shared/header';
 import {useSelector,useDispatch} from 'react-redux';
+
 
 import CheckBox from 'react-native-check-box';
 import { ScrollView } from 'react-native-gesture-handler';
@@ -41,6 +42,10 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { RootStackParamList } from '../RouteConfig';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { RootState } from '../appReducers';
+import AsyncStorage from '@react-native-community/async-storage';
+import Storage from 'react-native-storage';
+var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
 
 type NotificationPageRouteProp = RouteProp<RootStackParamList, 'CreateAccount'>;
 
@@ -56,6 +61,8 @@ type Props = {
 
 
 const CreateAccount = (props:Props) => {
+
+  const dispatch = useDispatch();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -80,17 +87,77 @@ const CreateAccount = (props:Props) => {
   const [visible,setVisible] = useState(false)
 
   const onSelect = (country: any) => {
-    
     setCountryCode(country.cca2);
-    setCode("+" + country.callingCode[0]);
-
-   
+    setCode("+" + country.callingCode[0]); 
   }
+
+
+  function ValidateEmail(mail:string) {
+    if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(mail)){
+        return (true)
+      }
+     return (false)
+}
+
+const validateForm = () => {
+  let emailCheck = ValidateEmail(email)
+  if(firstName==''){
+    appConfig.functions.showError('Enter first name')
+    return
+  }if(lastName==''){
+    appConfig.functions.showError('Enter last name')
+    return
+  }else if(email==''){
+    appConfig.functions.showError('Enter your email')
+    return
+  }else if(emailCheck == false){
+     appConfig.functions.showError('Invalid email format')
+      return
+   }else if(phone==''){
+     appConfig.functions.showError('Enter a valid phone number')
+     return
+   }else if(password==''){
+    appConfig.functions.showError('Set a password')
+    return
+  }else if(conpassword==''){
+    appConfig.functions.showError('Confirm your password')
+    return
+  }else if(conpassword!=password){
+    appConfig.functions.showError('Password and Confirm password does not match')
+    return
+  }else{
+      let phn=code.concat(phone)
+      dispatch(showLoader())
+      dispatch(signup({first_name:firstName,last_name:lastName,email:email,phone:phn,password:password}))
+   }
+}
+
+
+const signUpped = useSelector((state:RootState)=>state.login_r._signup)
+
+useEffect(()=>{
+  console.log('signUpped',signUpped);
+  if(signUpped != undefined){
+    dispatch(hideLoader())
+    if(signUpped.status == true){
+      storage.save({
+        key:"userData",
+        data:signUpped.user_details,
+        expires: null
+      });
+        props.navigation.push('VerifyPhone',{page:'SignUp',phone:code.concat(phone),email:''})
+    }else{
+      appConfig.functions.showError(signUpped.message);
+    }
+  }
+},[signUpped])
  
     return (
       <Container>
         <HeaderPage title="" back={true}/>
+        
       <ScrollView>
+      <KeyboardAvoidingView behavior="padding">
           <View style={[common.p20]}>
          
             <View style={[common.mb20]}>
@@ -138,7 +205,7 @@ const CreateAccount = (props:Props) => {
                   />
                 </Item>
                 <View>
-                <Label style={[theme.inputlabel, common.textgray, common.mt10]}>
+                <Label style={[ common.textgray, common.mt10,{fontSize:15}]}>
                   Phone Number
                 </Label>
                 <View style={[common.flexrow]}>
@@ -160,7 +227,7 @@ const CreateAccount = (props:Props) => {
                   
                     
                   </Item>
-                  <Item style={[common.ml0, common.pt10, {flex: 3,paddingLeft:10}]}>
+                  <Item style={[common.ml10, common.pt10, {flex: 3,paddingLeft:10}]}>
                     <Input  
                       value={phone}
                       onChangeText={(phone)=>{setPhone(phone)}}
@@ -209,17 +276,19 @@ const CreateAccount = (props:Props) => {
                 </View>
 
                 <View style={[common.mt20]}>
-                  <Button block light style={[theme.button_orange]}>
+                  <Button block light style={[theme.button_orange]} onPress={validateForm}>
                     <Text
                       style={[theme.textcapital, common.white, common.fontmd]}>
-                      Done
+                      Create
                     </Text>
                   </Button>
                 </View>
               </Form>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </ScrollView>
+        
       </Container>
     );
   }

@@ -7,7 +7,7 @@
  */
 
 import React, {Component} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView} from 'react-native';
+import {StatusBar, Image, TouchableOpacity, ScrollView,Alert} from 'react-native';
 import {
   Container,
   View,
@@ -29,9 +29,62 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
+import {CommonActions} from '@react-navigation/native';
+import {_login} from '../actions/login/loginActions';
+import {useDispatch,useSelector} from 'react-redux';
 
-export default class Settings extends Component {
-  render() {
+import { RootStackParamList } from '../RouteConfig';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
+import { RootState } from '../appReducers';
+import AsyncStorage from '@react-native-community/async-storage';
+import Storage from 'react-native-storage';
+var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
+
+type NotificationPageRouteProp = RouteProp<RootStackParamList, 'Settings'>;
+
+type NotificationPageNavigationProp = StackNavigationProp<
+    RootStackParamList,
+    'Settings'
+>;
+
+type Props = {
+    route: NotificationPageRouteProp;
+    navigation: NotificationPageNavigationProp;
+};
+
+const Settings = (props:Props) => {
+
+  const dispatch = useDispatch();
+
+  const logout = () =>{
+    Alert.alert('Logout', 'Are you sure you want to Signout?',
+    [
+        { text: 'cancel' },
+        { text: 'yes', onPress: () => { 
+
+          dispatch(_login(undefined));
+            setTimeout(()=>{
+              storage.remove({key:'userData'});
+              AsyncStorage.removeItem('@access_token');
+               AsyncStorage.removeItem('@refresh_token');
+               props.navigation.dispatch(
+                CommonActions.reset({
+                  index: 1,
+                  routes: [
+                    { name: 'LandingPage' },
+                    
+                  ],
+                })
+              );
+            },500)
+             
+          } 
+        }
+      ]
+  )
+  }
+ 
     return (
       <Container>
         <StatusBar barStyle="dark-content" />
@@ -76,12 +129,10 @@ export default class Settings extends Component {
               <TouchableOpacity style={[common.p20]}>
                 <Text>Privacy</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[common.p20]}>
+              <TouchableOpacity style={[common.p20]} onPress={logout}>
                 <Text>Sign Out</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[common.p20]}>
-                <Text>Sign Out</Text>
-              </TouchableOpacity>
+             
             </View>
           </View>
           <View>
@@ -93,4 +144,5 @@ export default class Settings extends Component {
       </Container>
     );
   }
-}
+
+export default Settings

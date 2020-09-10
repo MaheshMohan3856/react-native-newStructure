@@ -1,4 +1,4 @@
-import {LOGIN} from './loginActionTypes';
+import {LOGIN,SIGNUP,VERIFY_PHONE,VERIFY_EMAIL,RESEND,FORGOT,RESET} from './loginActionTypes';
 
 import { apiCall } from '../../lib/Api';
 
@@ -7,7 +7,7 @@ import { apiCall } from '../../lib/Api';
 export const login = (data:object) => {
     return (dispatch, getState) => {       
   
-        return apiCall('login', true, 'POST', data)
+        return apiCall('users/login', false, 'POST', data)
         .then((result) => {           
             dispatch(_login(result));            
         })
@@ -22,3 +22,111 @@ export const _login = (result:object) => {
     }
 }
 
+export const signup = (data:object) => {
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/register', false, 'POST', data)
+        .then((result) => {           
+            dispatch(_signup(result));            
+        })
+
+    };
+}
+
+
+export const _signup = (result:object) => {
+    return{
+        type:SIGNUP,
+        result
+    }
+}
+
+export const checkPhoneVerification = (data:object) =>{
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/verify_otp', true, 'POST', data)
+        .then((result) => {           
+            dispatch(_verifyphone(result));            
+        })
+
+    };
+}
+
+export const _verifyphone = (result:object) => {
+    return{
+        type:VERIFY_PHONE,
+        result
+    }
+}
+
+export const checkEmailVerification = (data:object) =>{
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/verify_forgot_otp', false, 'POST', data)
+        .then((result) => {           
+            dispatch(_verifyemail(result));            
+        })
+
+    };
+}
+
+export const _verifyemail = (result:object) => {
+    return{
+        type:VERIFY_EMAIL,
+        result
+    }
+}
+
+export const resendOtp = (data:object) => {
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/resend_otp', false, 'POST', data)
+        .then((result) => {           
+            dispatch(_resend(result));            
+        })
+
+    };
+}
+
+export const _resend = (result:object) => {
+    return{
+        type:RESEND,
+        result
+    }
+}
+
+export const forgotPass = (data:object) => {
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/forgot_password', false, 'POST', data)
+        .then((result) => {           
+            dispatch(_forgot(result));            
+        })
+
+    };
+}
+
+export const _forgot = (result:object) => {
+    return{
+        type:FORGOT,
+        result
+    }
+}
+
+export const resetPassword = (data:object) => {
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/reset_password', false, 'POST', data)
+        .then((result) => {           
+            dispatch(_reset(result));            
+        })
+
+    };
+}
+
+export const _reset = (result:object) => {
+    return{
+        type:RESET,
+        result
+    }
+}

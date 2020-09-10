@@ -144,4 +144,7 @@ export const common = StyleSheet.create({
   bgwhite: {
     backgroundColor: '#fff',
   },
+  textgray: {
+    color: '#878787',
+  },
 });

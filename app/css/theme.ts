@@ -5,22 +5,22 @@ export const theme = StyleSheet.create({
     backgroundColor: '#fff',
   },
   fontthin: {
-    fontFamily: 'RobotoThin',
+    fontFamily: 'Roboto-Thin',
   },
   fontlight: {
-    fontFamily: 'RobotoLight',
+    fontFamily: 'Roboto-Light',
   },
   fontregular: {
-    fontFamily: 'RobotoRegular',
+    fontFamily: 'Roboto-Regular',
   },
   fontmedium: {
-    fontFamily: 'RobotoMedium',
+    fontFamily: 'Roboto-Medium',
   },
   fontbold: {
-    fontFamily: 'RobotoBold',
+    fontFamily: 'Roboto-Bold',
   },
   fontblack: {
-    fontFamily: 'RobotoBlack',
+    fontFamily: 'Roboto-Black',
   },
   colorblack: {
     color: '#272727',

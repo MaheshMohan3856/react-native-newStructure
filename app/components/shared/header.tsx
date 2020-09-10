@@ -31,13 +31,29 @@ type Props = {back:boolean,title:string,navigation:any}
   iosBarStyle="dark-content"
   style={[theme.themeheader]}>
   <Left>
-    <Button transparent onPress={()=>props.navigation.goBack()}>
+    {
+      props.back == true
+      && 
+      <Button transparent onPress={()=>props.navigation.goBack()}>
       <Icon
         name="chevron-small-left"
         type="Entypo"
         style={[theme.colorblack, common.fontxxxl]}
       />
     </Button>
+    }
+    {
+      props.back == false
+      && 
+      <Button transparent onPress={()=>props.navigation.toggleDrawer()}>
+      <Icon
+        name="menu"
+        type="Entypo"
+        style={[theme.colorblack, common.fontxxxl]}
+      />
+    </Button>
+    }
+    
   </Left>
   <Body />
 </Header>

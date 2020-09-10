@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, {Component} from 'react';
+import React, {useState,useEffect} from 'react';
 import {StatusBar, Image, TouchableOpacity, ScrollView} from 'react-native';
 import {
   Container,
@@ -29,9 +29,13 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
+import HeaderPage from './shared/header';
 import { RootStackParamList } from '../RouteConfig';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import AsyncStorage from '@react-native-community/async-storage';
+import Storage from 'react-native-storage';
+var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
 
 type NotificationPageRouteProp = RouteProp<RootStackParamList, 'CreateAccount'>;
 
@@ -46,28 +50,17 @@ type Props = {
 };
 
  const HomePage = (props:Props) => {
+
+  const [name,setName] = useState('')
+  useEffect(()=>{
+    storage.load({key:'userData'}).then((ret)=>{
+         setName(ret.first_name)
+    })
+  },[])
  
     return (
       <Container>
-        <StatusBar barStyle="dark-content" />
-        <Header
-          androidStatusBarColor="#fff"
-          iosBarStyle="dark-content"
-          style={[theme.themeheader]}>
-
-            <Left >
-            <Button transparent onPress={()=>props.navigation.toggleDrawer()}>
-              <Icon
-                name="menu"
-                type="Entypo"
-                style={[theme.colorblack, common.fontxxxl]}
-              />
-          </Button>
-          </Left>
-
-          <Body />
-          <Right />
-          </Header>
+        <HeaderPage back={false} title=""/>
        <ScrollView>
         <View style={[common.pt20, common.mt10]}>
           <Image
@@ -83,7 +76,7 @@ type Props = {
               common.fontxxl,
               common.colorblack,
             ]}>
-            Hi Gonzalez !
+            Hi {name} !
           </Text>
           <Text style={[common.center, theme.colorblack]}>
             One line description about the WUW

@@ -10,9 +10,9 @@ export const appConfig = {
 
  
 
- apiBaseUrl:'http://web.newagesme.com:7788/users/',
+ apiBaseUrl:'http://newagesme.com:3011/',
  
- baseUrl:'http://web.newagesme.com:7788/images/users/',
+
 
    
    
