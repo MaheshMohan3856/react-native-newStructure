@@ -1,35 +1,42 @@
 {
   "project_info": {
-    "project_number": "329973517308",
-    "firebase_url": "https://whateveruwant-b092b.firebaseio.com",
-    "project_id": "whateveruwant-b092b",
-    "storage_bucket": "whateveruwant-b092b.appspot.com"
+    "project_number": "110273773977",
+    "firebase_url": "https://wuwapp-c1367.firebaseio.com",
+    "project_id": "wuwapp-c1367",
+    "storage_bucket": "wuwapp-c1367.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:329973517308:android:353a07ab9e861a9c08c079",
+        "mobilesdk_app_id": "1:110273773977:android:a1006c7d5ea85f984d1308",
         "android_client_info": {
           "package_name": "com.wuwapp"
         }
       },
       "oauth_client": [
         {
-          "client_id": "329973517308-ua0ft8moek6kchc72n796gv0mifvkoi0.apps.googleusercontent.com",
+          "client_id": "110273773977-sq73gad3r56uv4l6sr115gnma9pf7rb4.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDxDBKwiFF23tjkUGJJKKR9hMpFMhkPdcU"
+          "current_key": "AIzaSyD9aCSdZEe4o-AKrRfdRZX0wKV_qVeznSc"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "329973517308-ua0ft8moek6kchc72n796gv0mifvkoi0.apps.googleusercontent.com",
+              "client_id": "110273773977-sq73gad3r56uv4l6sr115gnma9pf7rb4.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "110273773977-d0a9o5u31iga9rr4j6b0sokabk5jq6pp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wuw.wuw"
+              }
             }
           ]
         }

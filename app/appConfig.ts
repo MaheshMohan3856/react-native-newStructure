@@ -25,7 +25,7 @@ export const appConfig = {
 
     toastShort: 1000,
 
-    GoogleApiKey: 'AIzaSyA0Dm7UfoRoks7bDrRjvApVOLABdGAWaww',
+    GoogleApiKey: 'AIzaSyDJNc5uhHaahvRT2jdrN7QNsyW8DNh0Wc8',
 
     functions: {
         showError(error:string) {

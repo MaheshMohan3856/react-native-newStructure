@@ -7,7 +7,7 @@
  */
 
 import React, {useState,useRef, useEffect} from 'react';
-import {StatusBar, Image, TouchableOpacity,KeyboardAvoidingView} from 'react-native';
+import {Platform,StatusBar, Image, TouchableOpacity,KeyboardAvoidingView,TouchableWithoutFeedback,Keyboard} from 'react-native';
 import {
   Container,
   View,
@@ -31,7 +31,7 @@ import {common} from '../css/common';
 import CountryPicker from 'react-native-country-picker-modal';
 import {showLoader, hideLoader} from '../actions/common/commonActions';
 import {appConfig} from '../appConfig';
-import {login,signup} from '../actions/login/loginActions';
+import {login,signup,_signup} from '../actions/login/loginActions';
 import HeaderPage from './shared/header';
 import {useSelector,useDispatch} from 'react-redux';
 
@@ -40,6 +40,7 @@ import CheckBox from 'react-native-check-box';
 import { ScrollView } from 'react-native-gesture-handler';
 
 import { RootStackParamList } from '../RouteConfig';
+import messaging from '@react-native-firebase/messaging';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootState } from '../appReducers';
@@ -70,8 +71,7 @@ const CreateAccount = (props:Props) => {
   const [phone,setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [conpassword, setConpassword] = useState('');
-  
-  const [checked,setChecked] = useState(true)
+ 
 
   const inputFirstName: any = useRef(null);
   const [inputLastName, setInputLastName] = useState<any>(null)
@@ -85,6 +85,7 @@ const CreateAccount = (props:Props) => {
   const [withAlphaFilter, setWithAlphaFilter] = useState<boolean>(true)
   const [countryCode, setCountryCode] = useState('US')
   const [visible,setVisible] = useState(false)
+  const [deviceToken,setDeviceToken] = useState('')
 
   const onSelect = (country: any) => {
     setCountryCode(country.cca2);
@@ -128,9 +129,21 @@ const validateForm = () => {
   }else{
       let phn=code.concat(phone)
       dispatch(showLoader())
-      dispatch(signup({first_name:firstName,last_name:lastName,email:email,phone:phn,password:password}))
+      dispatch(signup({first_name:firstName,last_name:lastName,email:email,phone:phone,phone_prefix:code,password:password,device_token:deviceToken}))
    }
 }
+
+
+useEffect(()=>{
+  messaging()
+    .getToken()
+    .then(token => {
+      setDeviceToken(token)
+    });
+  return () => {
+    dispatch(_signup(undefined))
+  }
+},[])
 
 
 const signUpped = useSelector((state:RootState)=>state.login_r._signup)
@@ -145,7 +158,8 @@ useEffect(()=>{
         data:signUpped.user_details,
         expires: null
       });
-        props.navigation.push('VerifyPhone',{page:'SignUp',phone:code.concat(phone),email:''})
+        props.navigation.push('VerifyPhone',{page:'SignUp',phone:phone,code:code,email:''})
+        
     }else{
       appConfig.functions.showError(signUpped.message);
     }
@@ -154,10 +168,11 @@ useEffect(()=>{
  
     return (
       <Container>
-        <HeaderPage title="" back={true}/>
-        
+        <HeaderPage title="" back={true} right=""/>
+        <KeyboardAvoidingView behavior={Platform.OS == "ios" ? "padding" : "height"} style={{flex:1}}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView>
-      <KeyboardAvoidingView behavior="padding">
+      
           <View style={[common.p20]}>
          
             <View style={[common.mb20]}>
@@ -256,13 +271,15 @@ useEffect(()=>{
                      value={conpassword}
                      onChangeText={(conpassword)=>{setConpassword(conpassword)}}
                      getRef={(c) => setConpasswordInputRef(c)}
-                    onSubmitEditing={()=>{}}
+                    onSubmitEditing={validateForm}
                     returnKeyType="done"
                     secureTextEntry={true}
                   />
                 </Item>
                 <View>
-                  <CheckBox
+                <Text style={[common.pt10,{color:"#F16436"}]}>By Signing Up, you are agreeing to the <Text style={{color:"#F16436",textDecorationLine:"underline",textDecorationColor:"black"}} onPress={()=>props.navigation.push('Terms')}>Terms</Text> and <Text style={{color:"#F16436",textDecorationLine:"underline",textDecorationColor:"black"}} onPress={()=>props.navigation.push('Privacy')}>Privacy</Text></Text>
+                </View>
+                  {/* <CheckBox
                     style={[common.pt10]}
                     checkedCheckBoxColor="#F16436"
                     uncheckedCheckBoxColor="#DCDCDC"
@@ -272,8 +289,8 @@ useEffect(()=>{
                     }}
                     isChecked={checked}
                     rightText={'Terms & Conditions'}
-                  />
-                </View>
+                  /> */}
+                  
 
                 <View style={[common.mt20]}>
                   <Button block light style={[theme.button_orange]} onPress={validateForm}>
@@ -286,9 +303,10 @@ useEffect(()=>{
               </Form>
             </View>
           </View>
-          </KeyboardAvoidingView>
+         
         </ScrollView>
-        
+        </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Container>
     );
   }

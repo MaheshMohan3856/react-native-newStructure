@@ -1,4 +1,4 @@
-import {LOGIN,SIGNUP,VERIFY_PHONE,VERIFY_EMAIL,RESEND,FORGOT,RESET} from './loginActionTypes';
+import {LOGIN,SIGNUP,VERIFY_PHONE,VERIFY_EMAIL,RESEND,FORGOT,RESET,DELETE,VERIFY_NEW_PHONE} from './loginActionTypes';
 
 import { apiCall } from '../../lib/Api';
 
@@ -127,6 +127,42 @@ export const resetPassword = (data:object) => {
 export const _reset = (result:object) => {
     return{
         type:RESET,
+        result
+    }
+}
+
+export const _deleteAccount = () =>{
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/deactivate_account', true, 'POST', {})
+        .then((result) => {           
+            dispatch(_delete(result));            
+        })
+
+    };
+}
+
+export const _delete = (result:object) => {
+    return{
+        type:DELETE,
+        result
+    }
+}
+
+export const checkNewPhone = (data:object) =>{
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/verify_new_phone', true, 'POST', data)
+        .then((result) => {           
+            dispatch(_verifynewphone(result));            
+        })
+
+    };
+}
+
+export const _verifynewphone = (result:object) => {
+    return{
+        type:VERIFY_NEW_PHONE,
         result
     }
 }

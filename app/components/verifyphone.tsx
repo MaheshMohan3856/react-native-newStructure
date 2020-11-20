@@ -7,7 +7,7 @@
  */
 
 import React, {useState,useEffect} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView, KeyboardAvoidingView} from 'react-native';
+import {Platform,StatusBar, Image, TouchableOpacity, ScrollView, KeyboardAvoidingView} from 'react-native';
 import {
   Container,
   View,
@@ -31,7 +31,8 @@ import {CommonActions} from '@react-navigation/native';
 import OTPInputView from '@twotalltotems/react-native-otp-input'
 import {showLoader, hideLoader} from '../actions/common/commonActions';
 import {appConfig} from '../appConfig';
-import {checkPhoneVerification,checkEmailVerification,resendOtp} from '../actions/login/loginActions';
+import {checkPhoneVerification,checkEmailVerification,resendOtp,_verifyphone,_verifyemail,checkNewPhone, _verifynewphone} from '../actions/login/loginActions';
+import {_profileEditted} from '../actions/settings/settingsActions';
 import HeaderPage from './shared/header';
 import {useSelector,useDispatch} from 'react-redux';
 
@@ -42,6 +43,9 @@ import { RootStackParamList } from '../RouteConfig';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootState } from '../appReducers';
+import AsyncStorage from '@react-native-community/async-storage';
+import Storage from 'react-native-storage';
+var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
 
 type NotificationPageRouteProp = RouteProp<RootStackParamList, 'CreateAccount'>;
 
@@ -56,9 +60,19 @@ type Props = {
 };
 
 const VerifyPhone = (props:Props) => {
+
   const dispatch =  useDispatch();
 
   const [otp,setOtp] = useState('');
+
+useEffect(()=>{
+    return () => {
+      dispatch(_verifyphone(undefined))
+      dispatch(_verifyemail(undefined))
+      dispatch(_verifynewphone(undefined))
+    }
+  },[])
+  
 
   const sendOtp = (otpp:String) => {
     
@@ -66,9 +80,12 @@ const VerifyPhone = (props:Props) => {
     
     dispatch(showLoader());
     dispatch(checkPhoneVerification({otp:otpp}))
-    }else{
+    }else if(props?.route?.params?.page == 'ForgotPassword'){
        dispatch(showLoader());
       dispatch(checkEmailVerification({email:props?.route?.params?.email,otp:otpp}))
+    }else{
+      dispatch(showLoader());
+      dispatch(checkNewPhone({otp:otpp,phone:props?.route?.params?.phone,phone_prefix:props?.route?.params?.code}))
     }
   }
 
@@ -77,6 +94,11 @@ const VerifyPhone = (props:Props) => {
        if(phoneVerified != undefined){
          dispatch(hideLoader());
          if(phoneVerified.status == true){
+          storage.load({key:"userData"}).then((ret)=>{
+            ret.verification_status = 'Y';
+            storage.save({key:"userData",data:ret,expires:null});
+          })
+          appConfig.functions.successMsg(phoneVerified.message);
           props.navigation.dispatch(
             CommonActions.reset({
               index: 1,
@@ -86,6 +108,7 @@ const VerifyPhone = (props:Props) => {
               ],
             })
           );
+          
          }else{
            appConfig.functions.showError(phoneVerified.message);
          }
@@ -98,17 +121,43 @@ const VerifyPhone = (props:Props) => {
       dispatch(hideLoader());
       if(emailVerified.status == true){
          props.navigation.push('ResetPassword',{email:props?.route?.params?.email})
+         
       }else{
         appConfig.functions.showError(emailVerified.message);
       }
     }
 },[emailVerified])
 
+const newPhone = useSelector((state:RootState)=>state.login_r._verifyNewPhone)
+
+useEffect(()=>{
+  if(newPhone != undefined){
+    dispatch(hideLoader());
+    if(newPhone.status == true){
+     storage.load({key:"userData"}).then((ret)=>{
+       ret.verification_status = 'Y';
+       ret.phone = props?.route?.params?.phone
+       ret.phone_prefix = props?.route?.params?.code
+       storage.save({key:"userData",data:ret,expires:null});
+     })
+     appConfig.functions.successMsg(newPhone.message);
+     setTimeout(()=>{
+      props.navigation.navigate('Settings')
+      dispatch(_profileEditted({editted:true}))
+     },1000)
+     
+    }else{
+      appConfig.functions.showError(newPhone.message);
+    }
+  }
+},[newPhone])
+
 const resentOtp = () =>{
-  if(props?.route?.params?.page == 'SignUp'){
-      let phn = props.route?.params?.phone
+  setOtp('');
+  if(props?.route?.params?.page == 'SignUp' || props?.route?.params?.page == 'EditProfile'){
+  
       dispatch(showLoader())
-      dispatch(resendOtp({otp_type:'phone',data:phn}))
+      dispatch(resendOtp({otp_type:'phone',data:{phone:props.route?.params?.phone,phone_prefix:props.route?.params?.code}}))
   }else{
     dispatch(showLoader())
       dispatch(resendOtp({otp_type:'email',data:props.route?.params?.email}))
@@ -130,13 +179,13 @@ useEffect(()=>{
 
     return (
       <Container>
-        <HeaderPage title="" back={true} />
-        <KeyboardAvoidingView behavior="padding">
+        <HeaderPage title="" back={true} right=""/>
+        <KeyboardAvoidingView behavior={Platform.OS == "ios" ? "padding" : "height"} style={{flex:1}}>
         <ScrollView>
           <View style={[common.p20]}>
             <View style={[common.mb20]}>
               {
-                props?.route?.params?.page == 'SignUp'
+                (props?.route?.params?.page == 'SignUp' || props?.route?.params?.page == 'EditProfile')
                 &&
                 <Text
                 style={[theme.fontregular, common.fontxxl, theme.colorblack]}>
@@ -157,9 +206,9 @@ useEffect(()=>{
                 Please enter the verification code sent to
               </Text>
               {
-                props?.route?.params?.page == 'SignUp'
+                (props?.route?.params?.page == 'SignUp' || props?.route?.params?.page == 'EditProfile')
                 &&
-              <Text style={[theme.fontbold]}>{ props?.route?.params?.phone} </Text>
+              <Text style={[theme.fontbold]}> { props?.route?.params?.code} { props?.route?.params?.phone} </Text>
               }
               {
                 props?.route?.params?.page == 'ForgotPassword'

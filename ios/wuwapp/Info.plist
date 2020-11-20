@@ -20,6 +20,10 @@
 	<string>1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>WUW need to access your photo library to upload profile image and documents</string>
+	<key>NSCameraUsageDescription</key>
+	<string>WUW need to access your camera to upload profile image and documents</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -37,8 +41,12 @@
 			</dict>
 		</dict>
 	</dict>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>WUW needs to access your current location to find nearby services</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>WUW needs to access your location to find nearby services</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>WUW needs to access your location to find nearby services</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>AntDesign.ttf</string>
@@ -69,7 +77,6 @@
 		<string>Roboto-Regular.ttf</string>
 		<string>Roboto-Thin.otf</string>
 		<string>Roboto-Thin.ttf</string>
-	
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

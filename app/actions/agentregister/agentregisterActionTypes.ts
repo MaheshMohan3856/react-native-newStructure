@@ -1,0 +1,6 @@
+export const AGENT_REGISTER = "AGENT_REGISTER"
+
+export const SWITCHING = "SWITCHING"
+
+export const BECAME_AGENT = "BECAME_AGENT"
+

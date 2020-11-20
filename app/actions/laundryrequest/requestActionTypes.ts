@@ -1,0 +1,9 @@
+export const LAUNDRYLIST = "LAUNDRYLIST";
+
+export const LAUNDRYDETAIL = "LAUNDRYDETAIL";
+
+export const LAUNDRO = 'LAUNDRO';
+
+export const CALCULATE = 'CALCULATE';
+
+export const CONFIRMPICKUP = 'CONFIRMPICKUP';

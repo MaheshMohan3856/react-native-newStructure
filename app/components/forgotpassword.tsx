@@ -7,7 +7,7 @@
  */
 
 import React, {useState,useEffect} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView} from 'react-native';
+import {Platform,StatusBar, Image, TouchableOpacity, ScrollView,KeyboardAvoidingView,TouchableWithoutFeedback,Keyboard} from 'react-native';
 import {
   Container,
   View,
@@ -29,7 +29,7 @@ import {theme} from '../css/theme';
 import {common} from '../css/common';
 import {showLoader, hideLoader} from '../actions/common/commonActions';
 import {appConfig} from '../appConfig';
-import {forgotPass} from '../actions/login/loginActions';
+import {forgotPass,_forgot} from '../actions/login/loginActions';
 import HeaderPage from './shared/header';
 import {useSelector,useDispatch} from 'react-redux';
 
@@ -80,18 +80,29 @@ const ForgotPassword = (props:Props) => {
         dispatch(hideLoader())
         if(forgot.status == true){
             appConfig.functions.successMsg(forgot.message);
-            props.navigation.push('VerifyPhone',{page:'ForgotPassword',email:email,phone:''})
+            props.navigation.push('VerifyPhone',{page:'ForgotPassword',email:email,phone:'',code:''})
+            
         }else{
-         
+          
           appConfig.functions.showError(forgot.message);
         }
       }
   },[forgot])
+
+  useEffect(()=>{
+    return () => {
+      dispatch(_forgot(undefined))
+    }
+  },[])
   
     return (
       <Container>
-        <HeaderPage title="" back={true} />
-        <ScrollView>
+        <HeaderPage title="" back={true} right=""/>
+        <KeyboardAvoidingView behavior={Platform.OS == "ios" ? "padding" : "height"} style={{flex:1}}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView >
+       
+        
           <View style={[common.p20]}>
             <View style={[common.mb20]}>
               <Text
@@ -128,7 +139,11 @@ const ForgotPassword = (props:Props) => {
               </Form>
             </View>
           </View>
+       
+       
         </ScrollView>
+        </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Container>
     );
   }

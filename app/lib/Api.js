@@ -70,8 +70,8 @@
 
        }
         
-       console.log("url",url);
-       console.log("params",params);
+       console.log('url',url);
+       console.log('params',params);
 
         const response = await fetch(url, {
             method: method,

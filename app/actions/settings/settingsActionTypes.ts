@@ -1,0 +1,11 @@
+export const CHANGE_PASSWORD = "CHANGE_PASSWORD";
+
+export const USER_PROFILE = "USER_PROFILE";
+
+export const UPDATE_PROFILE = "UPDATE_PROFILE";
+
+export const PROFILE_EDITTED = "PROFILE_EDITTED";
+
+export const AGENT_PROFILE = "AGENT_PROFILE";
+
+export const EDIT_AGENT = "EDIT_AGENT";

@@ -1,0 +1,5 @@
+export const CALCULATEAMOUNT = "CALCULATEAMOUNT";
+
+export const MONEYRANGE = "MONEYRANGE";
+
+export const CONFIRMMONEY = "CONFIRMMONEY";

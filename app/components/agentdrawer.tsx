@@ -7,7 +7,7 @@
  */
 
 import React, {useState,useEffect} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView,ImageBackground} from 'react-native';
+import {StatusBar, Image, TouchableOpacity, ScrollView,ImageBackground, Alert} from 'react-native';
 import {
   Container,
   View,
@@ -35,9 +35,11 @@ import {
 import {theme} from '../css/theme';
 import {common} from '../css/common';
 import CheckBox from 'react-native-check-box';
+import {useSelector,useDispatch} from 'react-redux';
 import { RootStackParamList } from '../RouteConfig';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { RootState } from '../appReducers';
 import AsyncStorage from '@react-native-community/async-storage';
 import Storage from 'react-native-storage';
 var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
@@ -55,16 +57,66 @@ type Props = {
 };
 
 const AgentDrawer = (props:Props) => {
+
   const [firstName,setFirstname] = useState('')
   const [lastName,setLastname] = useState('')
   const [phone,setPhone] = useState('')
+  const [image,setImage] = useState('')
+  const [code,setCode] = useState('')
+  const [isAgent,setIsAgent] = useState(false)
+
   useEffect(()=>{
     storage.load({key:'userData'}).then((ret)=>{
       setFirstname(ret.first_name)
       setLastname(ret.last_name)
       setPhone(ret.phone)
+      setCode(ret.phone_prefix)
+      setImage(ret.profile_image != undefined?ret.profile_image:'')
+      if(ret.is_agent){
+        setIsAgent(ret.is_agent)
+      }
+      
     })
   },[])
+
+  const agentBecame = useSelector((state:RootState)=>state.agentregister_r._agentBecame)
+
+
+
+  useEffect(()=>{
+     if(agentBecame != undefined){
+       console.log('checking',agentBecame.registered)
+       if(agentBecame.registered == true){
+        storage.load({key:'userData'}).then((ret)=>{
+            ret.is_agent = true
+            setIsAgent(true);
+            storage.save({key:'userData',data:ret,expires:null}) 
+        })
+       }
+     }
+  },[agentBecame])
+
+  const profileChange = useSelector((state:RootState)=>state.settings_r._profileEditted)
+  
+  useEffect(()=>{
+    if(profileChange != undefined){
+      console.log('checking',profileChange.editted)
+      if(profileChange.editted == true){
+       storage.load({key:'userData'}).then((ret)=>{
+        setFirstname(ret.first_name)
+        setLastname(ret.last_name)
+        setPhone(ret.phone)
+        setCode(ret.phone_prefix)
+        setImage(ret.profile_image != undefined?ret.profile_image:'')
+        if(ret.is_agent){
+          setIsAgent(ret.is_agent)
+        }
+       })
+      }
+    }
+ },[profileChange])
+  
+
     return (
       <Container>
 
@@ -72,23 +124,44 @@ const AgentDrawer = (props:Props) => {
           <View style={[theme.bgorange,common.pt20,]}>
           <ListItem avatar style={[common.pt20,common.pb20,common.mt20,common.mb20]}>
             <Left>
-              <Thumbnail
-                source={require('../assets/images/thumbuser.png')}
+              {
+                image == ''
+                &&
+                <Thumbnail
+                source={require('../assets/images/no-photo.jpg')}
                 style={{width: 75, height: 75, borderRadius: 40}}
               />
+              }
+              {
+                image != ''
+                &&
+                <Thumbnail
+                source={{uri:image}}
+                style={{width: 75, height: 75, borderRadius: 40}}
+              />
+              }
             </Left>
             <Body style={[common.bordernone]}>
             <Text style={[common.white, common.fontbody]}>{firstName} {lastName}</Text>
-            <Text style={[common.white, common.fontsm]}>{phone}</Text>
+            <Text style={[common.white, common.fontsm]}>{code} {phone}</Text>
             </Body>
           </ListItem>
-          {/* <View  style={[common.pl20,common.pb20,]}>
-            <Text style={[common.white, common.fontlg,theme.fontbold]}>$98.00</Text>
+          {
+            isAgent == true
+            &&
+           <View  style={[common.pl20,common.pb20,]}>
+            <Text style={[common.white, common.fontlg,theme.fontbold]}>$00.00</Text>
             <Text style={[common.white, common.fontsm]}>THIS WEEK</Text>
-          </View> */}
-          <View  style={[common.pl20,common.pb20,]}>
-            <Button style={[{backgroundColor:"#fff",borderRadius:30,alignSelf:"center"}]}><Text style={[theme.textcapital,{color:'#F16436'}]}>Become An Agent</Text></Button>
+          </View> 
+          }
+          {
+            isAgent == false
+            &&
+            <View  style={[common.pl20,common.pb20,]}>
+            <Button style={[{backgroundColor:"#fff",borderRadius:30,alignSelf:"center"}]} onPress={()=>props.navigation.navigate('AgentBecome')}><Text style={[theme.textcapital,{color:'#F16436'}]}>Become An Agent</Text></Button>
           </View>
+          }
+          
           </View>
          
           <View style={[theme.lightblack,common.pt20,{height:'100%'}]}>
@@ -99,13 +172,13 @@ const AgentDrawer = (props:Props) => {
               <Switch value={true}  trackColor={{true: '#F16436', false: 'grey',}} />
             </Right>
               </ListItem>
-              <ListItem style={[common.bordernone]}>
+              <ListItem style={[common.bordernone]} onPress={()=>props.navigation.navigate('HomePage')}>
                 <Text style={[common.fontmd,common.white]}>Home</Text>
               </ListItem>
               <ListItem style={[common.bordernone]}>
                 <Text style={[common.fontmd,common.white]}>History</Text>
               </ListItem>
-              <ListItem style={[common.bordernone]}>
+              <ListItem style={[common.bordernone]} onPress={()=>props.navigation.navigate('PaymentCards')}>
                 <Text style={[common.fontmd,common.white]}>Payments</Text>
               </ListItem>
               <ListItem style={[common.bordernone]} onPress={()=>props.navigation.navigate('Settings')}>

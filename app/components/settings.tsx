@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, {Component} from 'react';
+import React, {useEffect,useState} from 'react';
 import {StatusBar, Image, TouchableOpacity, ScrollView,Alert} from 'react-native';
 import {
   Container,
@@ -30,8 +30,9 @@ import {
 import {theme} from '../css/theme';
 import {common} from '../css/common';
 import {CommonActions} from '@react-navigation/native';
-import {_login} from '../actions/login/loginActions';
+import {_login,_deleteAccount} from '../actions/login/loginActions';
 import {useDispatch,useSelector} from 'react-redux';
+import HeaderPage from './shared/header';
 
 import { RootStackParamList } from '../RouteConfig';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -56,6 +57,59 @@ type Props = {
 const Settings = (props:Props) => {
 
   const dispatch = useDispatch();
+  const [firstName,setFirstname] = useState('')
+  const [lastName,setLastname] = useState('')
+  const [image,setImage] = useState('')
+  const [phone,setPhone] = useState('')
+  const [code,setCode] = useState('')
+  const [isAgent,setIsAgent] = useState(false)
+
+  useEffect(()=>{
+    const unsubscribe = props.navigation.addListener('focus', () => {
+      storage.load({key:'userData'}).then((ret)=>{
+        setFirstname(ret.first_name)
+        setLastname(ret.last_name)
+        setImage(ret.profile_image != undefined?ret.profile_image:'')
+        setPhone(ret.phone)
+        setCode(ret.phone_prefix)
+        if(ret.is_agent){
+          setIsAgent(ret.is_agent)
+        }
+
+      })
+    });
+     
+  },[props.navigation])
+
+  const deleteAccount = () => {
+    Alert.alert('Delete', 'Are you sure you want to delete account?',
+    [
+        { text: 'cancel' },
+        { text: 'yes', onPress: () => { 
+
+          dispatch(_login(undefined));
+          dispatch(_deleteAccount())
+            setTimeout(()=>{
+              storage.remove({key:'userData'});
+              AsyncStorage.removeItem('@access_token');
+               AsyncStorage.removeItem('@refresh_token');
+               props.navigation.dispatch(
+                CommonActions.reset({
+                  index: 1,
+                  routes: [
+                    { name: 'LandingPage' },
+                    
+                  ],
+                })
+              );
+            },500)
+             
+          } 
+        }
+      ]
+  )
+  }
+  
 
   const logout = () =>{
     Alert.alert('Logout', 'Are you sure you want to Signout?',
@@ -87,22 +141,7 @@ const Settings = (props:Props) => {
  
     return (
       <Container>
-        <StatusBar barStyle="dark-content" />
-        <Header
-          androidStatusBarColor="#fff"
-          iosBarStyle="dark-content"
-          style={[theme.themeheader]}>
-          <Left>
-            <Button transparent>
-              <Icon
-                name="menu"
-                type="MaterialIcons"
-                style={[theme.colorblack, common.fontxxl]}
-              />
-            </Button>
-          </Left>
-          <Body />
-        </Header>
+        <HeaderPage title='' back={false} right=""/>
         <View style={[common.pl20, common.mt15, common.pb10]}>
           <Text style={[common.fontxxl]}>Settings</Text>
         </View>
@@ -111,32 +150,60 @@ const Settings = (props:Props) => {
             <View style={[theme.borderbottomgray, common.mb15]}>
               <ListItem avatar style={[common.pb15]}>
                 <Left>
-                  <Thumbnail
-                    source={require('../assets/images/thumbuser.png')}
-                  />
+                  {
+                    image == ''
+                    &&
+                    <Thumbnail
+                      source={require('../assets/images/no-photo.jpg')}
+                   />
+                  }
+                  {
+                    image != ''
+                    &&
+                    <Thumbnail
+                      source={{uri:image}}
+                   />
+                  }
+                  
                 </Left>
                 <Body style={[common.bordernone]}>
-                  <Text>Joseph Gonzalez</Text>
-                  <Text note>+1 644-867-6107</Text>
+                  <Text>{firstName} {lastName}</Text>
+                  <Text note>{code} {phone}</Text>
                 </Body>
               </ListItem>
             </View>
-
+           <ScrollView>
             <View>
-              <TouchableOpacity style={[common.p20]}>
+             
+              <TouchableOpacity style={[common.p20]} onPress={()=>props.navigation.navigate('EditProfile')}>
+                <Text>Edit Profile</Text>
+              </TouchableOpacity>
+              {
+                isAgent == true
+                &&
+                <TouchableOpacity style={[common.p20]} onPress={()=>props.navigation.navigate('EditAgent')}>
+                <Text>Edit Agent Profile</Text>
+              </TouchableOpacity>
+              }
+               <TouchableOpacity style={[common.p20]} onPress={()=>props.navigation.navigate('ChangePassword')}>
                 <Text>Change Password</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[common.p20]}>
-                <Text>Privacy</Text>
+              <TouchableOpacity style={[common.p20]} onPress={()=>props.navigation.navigate('Privacy')}>
+                <Text>Privacy Policy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[common.p20]} onPress={()=>props.navigation.navigate('Terms')}>
+                <Text>Terms Of Use</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[common.p20]} onPress={logout}>
                 <Text>Sign Out</Text>
               </TouchableOpacity>
              
             </View>
+            </ScrollView>
           </View>
+         
           <View>
-            <TouchableOpacity style={[common.p20, common.mb20]}>
+            <TouchableOpacity style={[common.p20, common.mb20]} onPress={deleteAccount}>
               <Text style={[theme.colorred]}>Delete your account</Text>
             </TouchableOpacity>
           </View>

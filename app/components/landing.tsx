@@ -7,7 +7,7 @@
  */
 
 import React, {Component} from 'react';
-import {StatusBar, Image, TouchableOpacity} from 'react-native';
+import {StatusBar, Image, TouchableOpacity,Animated} from 'react-native';
 import {
   Container,
   View,
@@ -27,6 +27,7 @@ import {
 import {theme} from '../css/theme';
 import {common} from '../css/common';
 import { ScrollView } from 'react-native-gesture-handler';
+
 import { RootStackParamList } from '../RouteConfig';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -53,13 +54,13 @@ const LandingPage = (props:Props) => {
           iosBarStyle="dark-content"
           style={[theme.themeheader, {height: 0}]}></Header>
         <ScrollView>
-        <View style={(common.pt20, common.mt20)}>
+        <View style={(common.pt10, common.mt10)}>
           <Image
             source={require('../assets/images/landing.png')}
             style={[
-              common.mt20,
+              common.mt10,
               common.center,
-              {width: 251, height: 194, marginTop: '20%'},
+              {width: 251, height: 194, marginTop: '5%'},
             ]}
           />
         </View>
@@ -67,11 +68,11 @@ const LandingPage = (props:Props) => {
           <Text
             style={[
               common.textcenter,
-              theme.fontblack,
+              theme.fontregular,
               common.fontxxl,
-              common.colorblack,
+              
             ]}>
-            Lets get started
+            Let's get started
           </Text>
           <Text style={[common.center, theme.colorblack]}>
             One line description about the WUW
@@ -84,20 +85,23 @@ const LandingPage = (props:Props) => {
           />
         </View>
         <View style={[theme.section_orange]}>
-          <Button block light style={[theme.button_white]} onPress={()=>props.navigation.navigate('CreateAccount')}>
+          <Button block light style={[theme.button_white]} onPress={()=>props.navigation.push('CreateAccount')}>
             <Text style={[theme.textcapital, theme.themecolor, common.fontmd]}>
               Create your account
             </Text>
           </Button>
           <Text
             style={[common.textcenter, common.white, common.pt15, common.pb15]}>
-            already have an account?
+            Already have an account?
           </Text>
-          <Button block bordered light style={[theme.button_border]} onPress={()=>props.navigation.navigate('LoginPage')}>
+          <Button block bordered light style={[theme.button_border]} onPress={()=>props.navigation.push('LoginPage')}>
             <Text style={[theme.textcapital, common.white, common.fontmd]}>
               Sign In
             </Text>
           </Button>
+          <View style={{height:10}}>
+
+          </View>
         </View>
         </ScrollView>
       </Container>

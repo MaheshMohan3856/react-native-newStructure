@@ -11,3 +11,7 @@ export const RESEND = "RESEND";
 export const FORGOT = "FORGOT";
 
 export const RESET = "RESET";
+
+export const DELETE = "DELETE";
+
+export const VERIFY_NEW_PHONE = "VERIFY_NEW_PHONE";
