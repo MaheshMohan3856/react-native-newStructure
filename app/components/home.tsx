@@ -7,7 +7,7 @@
  */
 
 import React, {useState,useEffect} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView, Dimensions,PermissionsAndroid,
+import {StatusBar,DeviceEventEmitter, Image, TouchableOpacity, ScrollView, Dimensions,PermissionsAndroid,
   Platform} from 'react-native';
 import {
   Container,
@@ -27,10 +27,17 @@ import {
   Right,
   Icon,
 } from 'native-base';
-
+import GetLocation from 'react-native-get-location'
+import LocationServicesDialogBox from "react-native-android-location-services-dialog-box";
 import {theme} from '../css/theme';
 import {common} from '../css/common';
-import Geolocation from '@react-native-community/geolocation';
+import io, { Socket } from 'socket.io-client';
+
+//import notifee,{AndroidImportance} from '@notifee/react-native';
+import messaging,{firebase} from '@react-native-firebase/messaging';
+import { CommonActions, useFocusEffect } from '@react-navigation/native';
+//import Geolocation from '@react-native-community/geolocation';
+
 import { useIsFocused } from '@react-navigation/native';
 import HeaderPage from './shared/header';
 import { RootStackParamList } from '../RouteConfig';
@@ -41,6 +48,7 @@ import Storage from 'react-native-storage';
 import {useDispatch, useSelector } from 'react-redux';
 import {checkStatus,checkCardAdded,_checkCardAdded,getLaundryList} from '../actions/home/homeActions';
 import { hideLoader, showLoader } from '../actions/common/commonActions';
+import {saveToken} from '../actions/token/tokenActions';
 import { RootState } from '../appReducers';
 import { appConfig } from '../appConfig';
 var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
@@ -57,10 +65,18 @@ type Props = {
     navigation: NotificationPageNavigationProp;
 };
 
+//var watchId:any = null
+
+
+
  const HomePage = (props:Props) => {
 
+
+  const [token,setToken] = useState('');
+  const [refreshToken,setRefreshToken] = useState('');
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
+  const [error,setError] = useState('')
 
   const [name,setName] = useState('')
   const [isagent,setIsagent] = useState(false)
@@ -74,120 +90,125 @@ type Props = {
   const [currentLongitude,setCurrentLongitude] = useState(0);
   const [currentLatitude,setCurrentLatitude] = useState(0);
   const [locationStatus,setLocationStatus] = useState('');
+  const [moneyStatus,setMoneyStatus] = useState('')
+  const [moneyRequestId,setMoneyRequestId] = useState('')
+  const [laundryStatus,setLaundryStatus] = useState('')
+  const [laundryRequestId,setLaundryRequestId] = useState('')
 
   const [laundromatId,setLauromatId] = useState(0)
 
 
+  
 
-  const getOneTimeLocation = () => {
-    setLocationStatus('Getting Location ...');
-    Geolocation.getCurrentPosition(
-      //Will give you the current location
-      (position) => {
-        setLocationStatus('You are Here');
-         console.log("position",position)
-        //getting the Longitude from the location json
-        const currentLongitude = position.coords.longitude;
 
-        //getting the Latitude from the location json
-        const currentLatitude = position.coords.latitude;
-
-        //Setting Longitude state
-        setCurrentLongitude(currentLongitude);
-        
-        //Setting Longitude state
-        setCurrentLatitude(currentLatitude);
-       
-        dispatch(getLaundryList({search_key:'',latitude:currentLatitude,longitude:currentLongitude}))
-      },
-      (error) => {
-        setLocationStatus(error.message);
-        
-        dispatch(getLaundryList({search_key:''}))
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 1000
-      },
-    );
-  };
-
+  
   useEffect(()=>{
-   
-   
-    storage.load({key:'userData'}).then((ret)=>{
-         setName(ret.first_name)
-         if(ret.is_agent==true)
-             setIsagent(true)
-    })
-
     
-
-
-  
-
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'ios') {
-      getOneTimeLocation();
-     
-    } else {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Location Access Required',
-            message: 'This App needs to Access your location',
-          },
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          //To Check, If Permission is granted
-          getOneTimeLocation();
-        
-        } else {
-          setLocationStatus('Permission Denied');
-         
-          dispatch(getLaundryList({search_key:''}))
-        }
-      } catch (err) {
-        console.warn(err);
-      }
+    if(Platform.OS === 'android'){
+        LocationServicesDialogBox.checkLocationServicesIsEnabled({
+          message: "<h2 style='color: #0af13e'>Use Location ?</h2>WUW wants to change your device settings:<br/><br/>Use GPS for better performance<br/><br/>",
+          ok: "YES",
+          cancel: "NO",
+          enableHighAccuracy: true, // true => GPS AND NETWORK PROVIDER, false => GPS OR NETWORK PROVIDER
+          showDialog: true, // false => Opens the Location access page directly
+          openLocationServices: true, // false => Directly catch method is called if location services are turned off
+          preventOutSideTouch: false, // true => To prevent the location services window from closing when it is clicked outside
+          preventBackClick: false, // true => To prevent the location services popup from closing when it is clicked back button
+          providerListener: false // true ==> Trigger locationProviderStatusChange listener when the location state changes
+      }).then(function(success) {
+          console.log(success); // success => {alreadyEnabled: false, enabled: true, status: "enabled"}
+      }).catch((error) => {
+          console.log(error.message); // error.message => "disabled"
+      });
     }
-  };
-  requestLocationPermission();
+    
+       appConfig.functions.isLoggedin()
+      .then((token)=>{
+             appConfig.functions.getRefresh()
+             .then((refreshtoken)=>{
+               dispatch(saveToken({token:token,refreshtoken:refreshtoken}))
+             })
+         })
+     
+  },[])
 
-},[])
   
-  useEffect(() => {
+
+  
+    useEffect(() => {
+   
     const unsubscribe = props.navigation.addListener('focus', () => {
+
+     // socketConnection('connect');
+     
       storage.load({key:'userData'}).then((ret)=>{
         setName(ret.first_name)
         
         if(ret.is_agent==true)
             setIsagent(true)
-       })  
-       dispatch(showLoader());
-         dispatch(checkStatus())
-        
-    });
+       }) 
+       appConfig.functions.isLoggedin()
+       .then((token)=>{
+         appConfig.functions.getRefresh()
+         .then((refreshToken)=>{
+            setToken(token);
+            setRefreshToken(refreshToken)
+         })
+          
+       }) 
+       dispatch(showLoader())
+       dispatch(checkStatus())
 
+       GetLocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 15000,
+        })
+        .then(location => {
+          setCurrentLatitude(location.latitude);
+          setCurrentLongitude(location.longitude);
+          dispatch(getLaundryList({search_key:'',latitude:location.latitude,longitude:location.longitude}))
+          console.log(location);
+        })
+        .catch(error => {
+            const { code, message } = error;
+            console.warn(code, message);
+            dispatch(getLaundryList({search_key:''}))
+          
+        })
+  
+       
+    });
+    // const unsubscribeBlur = props.navigation.addListener('blur', () => {
+    //   socketConnection('disconnect');
+      
+    // })
+   
+    
     return unsubscribe;
+   
+    
   }, [props.navigation]);
 
   const checked = useSelector((state:RootState)=>state.home_r._status)
 
   useEffect(()=>{
     if(checked != undefined){
+      
       dispatch(hideLoader());
       if(checked.status == true){
+       
         if(checked?.laundry_status_data?.can_apply == true){
              setRequestLaundry(true)
         }else{
+          setLaundryStatus(checked?.laundry_status_data?.order_status_label)
+          setLaundryRequestId(checked?.laundry_status_data?.request_id)
           setRequestLaundry(false)
         }
         if(checked?.money_status_data?.can_apply == true){
-          setRequestMoney(true)
+           setRequestMoney(true)
         }else{
+          setMoneyStatus(checked?.money_status_data?.status)
+          setMoneyRequestId(checked?.money_status_data?.request_id)
           setRequestMoney(false)
         }
           
@@ -203,6 +224,8 @@ type Props = {
   useEffect(()=>{
      if(homelist != undefined){
       dispatch(hideLoader());
+     
+     
        if(homelist.status == true){
          
         setList(homelist.laundromat_list);
@@ -246,6 +269,11 @@ type Props = {
     }
 
   },[iscardAdded])
+
+ 
+  function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
  
     return (
       <Container>
@@ -290,8 +318,8 @@ type Props = {
                     style={[common.fontlg, theme.fontbold, theme.colororange]}>
                     Request Money
                   </Text>
-                  <Text note numberOfLines={1} style={[theme.colororange]}>
-                    No more ATM lines. Gert your money anywhere
+                  <Text note  style={[theme.colororange]}>
+                    No more ATM lines. Get your money anywhere
                   </Text>
                 </Body>
                 <Right style={[common.bordernone]}>
@@ -310,7 +338,7 @@ type Props = {
             &&
             <TouchableOpacity style={[common.mb10]}>
             <View style={[theme.tabhome]}>
-              <ListItem thumbnail>
+              <ListItem thumbnail onPress={()=>props.navigation.navigate('TrackStatus',{unique_request_id:moneyRequestId,token:token,refreshToken:refreshToken})}>
                 <Left>
                   <Thumbnail
                     square
@@ -325,7 +353,7 @@ type Props = {
                   </Text>
                   <Text note numberOfLines={1} style={[theme.colorblack]}>
                   {/* $ 400 -  */}
-                  <Text danger style={[theme.colorred, theme.fontmedium]}>Pending</Text>
+                  <Text danger style={[theme.colorred, theme.fontmedium]}>{capitalizeFirstLetter(moneyStatus)}</Text>
                   </Text>
                 </Body>
                 <Right style={[common.bordernone]}>
@@ -358,7 +386,7 @@ type Props = {
                     style={[common.fontlg, theme.fontbold, theme.bluecolor]}>
                     Pickup Laundry
                   </Text>
-                  <Text note numberOfLines={1} style={[theme.bluecolor]}>
+                  <Text note  style={[theme.bluecolor]}>
                     We do it for you
                   </Text>
                 </Body>
@@ -379,7 +407,7 @@ type Props = {
             &&
             <TouchableOpacity >
             <View style={[theme.tabhome]}>
-              <ListItem thumbnail>
+              <ListItem thumbnail onPress={()=>props.navigation.navigate('LaundryInvoice',{unique_request_id:laundryRequestId,token:token,refreshToken:refreshToken})}>
                 <Left>
                   <Thumbnail
                     square
@@ -393,8 +421,9 @@ type Props = {
                     Order Placed
                   </Text>
                   <Text note numberOfLines={1} style={[theme.colorblack]}>
-                  Laundry Pickup - <Text danger style={[theme.colorred, theme.fontmedium]}>Pending</Text>
+                  Laundry Pickup - 
                   </Text>
+                  <Text danger style={[theme.colorred, theme.fontmedium]}>{capitalizeFirstLetter(laundryStatus)}</Text>
                 </Body>
                 <Right style={[common.bordernone]}>
                   <Icon
@@ -414,12 +443,12 @@ type Props = {
               <Text style={[common.white, common.fontlg, theme.fontbold]}>
                 EXPLORE
               </Text>
-              <Text note numberOfLines={1} style={[common.white]}>
+              <Text note  style={[common.white]}>
                 Discover more laundry services near by you
               </Text>
             </Body>
             <Right style={[common.bordernone]}>
-              <Button rounded small style={[common.bgwhite]}>
+              <Button rounded small style={[common.bgwhite]} onPress={()=>checkedCardAdded('LaundryList',0)}>
                 <Text style={[theme.textcapital, theme.colorblack]}>more</Text>
               </Button>
             </Right>
@@ -457,7 +486,7 @@ type Props = {
                                   theme.coloryellow,
                                   common.fontxl,
                                 ]}></Icon>{' '}
-                              4.8
+                              {item?.rating}
                             </Text>
                           </View>
                         </View>
@@ -480,3 +509,7 @@ type Props = {
   }
 
   export default HomePage
+
+
+
+  

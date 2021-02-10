@@ -9,6 +9,11 @@ import laundryrequestReducer from './reducers/laundryrequestReducer';
 import paymentReducer from './reducers/paymentReducer';
 import moneyrequestReducer from './reducers/moneyrequestReducer';
 import acceptReducer from './reducers/acceptReducer';
+import moneyorderReducer from './reducers/moneyorderReducer';
+import laundryorderReducer from './reducers/laundryorderReducer';
+import tokenReducer from './reducers/tokenReducer';
+import historyReducer from './reducers/historyReducer';
+import earningReducer from './reducers/earningReducer';
 
 const AppReducer = combineReducers({
   
@@ -20,7 +25,12 @@ const AppReducer = combineReducers({
     payment_r:paymentReducer,
     lrequest_r:laundryrequestReducer,
     mrequest_r:moneyrequestReducer,
-    accept_r:acceptReducer
+    accept_r:acceptReducer,
+    morder_r:moneyorderReducer,
+    lorder_r:laundryorderReducer,
+    token_r:tokenReducer,
+    history_r:historyReducer,
+    earnings_r:earningReducer
    
 }) 
 

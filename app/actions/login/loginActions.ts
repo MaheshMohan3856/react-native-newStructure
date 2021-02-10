@@ -1,4 +1,4 @@
-import {LOGIN,SIGNUP,VERIFY_PHONE,VERIFY_EMAIL,RESEND,FORGOT,RESET,DELETE,VERIFY_NEW_PHONE} from './loginActionTypes';
+import {LOGIN,LOGOUT,SIGNUP,VERIFY_PHONE,VERIFY_EMAIL,RESEND,FORGOT,RESET,DELETE,VERIFY_NEW_PHONE} from './loginActionTypes';
 
 import { apiCall } from '../../lib/Api';
 
@@ -18,6 +18,26 @@ export const login = (data:object) => {
 export const _login = (result:object) => {
     return{
         type:LOGIN,
+        result
+    }
+}
+
+
+
+export const logoutUser = () => {
+    return (dispatch, getState) => {       
+  
+        return apiCall('users/logout', true, 'POST', {})
+        .then((result) => {           
+            dispatch(_logout(result));            
+        })
+
+    };
+}
+
+export const _logout = (result:object) => {
+    return{
+        type:LOGOUT,
         result
     }
 }

@@ -14,7 +14,7 @@ import {
   Title,
   Left,
   Right,
-  Picker,
+  
   Icon,
   ListItem,
 } from 'native-base'
@@ -23,6 +23,8 @@ import {theme} from '../css/theme'
 import {common} from '../css/common'
 import {CommonActions} from '@react-navigation/native';
 import {showLoader, hideLoader} from '../actions/common/commonActions'
+import {Picker} from '@react-native-picker/picker';
+import Modal from 'react-native-modal'
 import {appConfig} from '../appConfig'
 import { addBankAccount,_addBankAccount} from '../actions/payment/paymentActions'
 import HeaderPage from './shared/header'
@@ -63,6 +65,7 @@ const AddBankACPage = (props: Props) => {
   const [zip,setZip] = useState('')
   const [phone,setPhone] = useState('')
   const [dob,setDob] = useState('')
+  const [gender,setGender] = useState('male')
 
   const [accountFirstNameRef, setaccountFirstNameRef] = useState<any>(null)
   const [accountLastameRef, setaccountLastNameRef] = useState<any>(null)
@@ -77,7 +80,11 @@ const AddBankACPage = (props: Props) => {
   const [dobRef,setdobRef] = useState<any>(null)
 
 
+  const [isModalVisible,setIsModalVisible] = useState(false) 
 
+  const toggleModal = () => {
+   setIsModalVisible( !isModalVisible);
+ };
   
   
   const addbankData = useSelector(
@@ -145,6 +152,9 @@ const AddBankACPage = (props: Props) => {
     }else if (dob == '') {
       appConfig.functions.showError('Please enter date of birth')
       return
+    }else if (gender == '') {
+      appConfig.functions.showError('Please select gender')
+      return
     }else if(splitstring[0] == undefined){
       appConfig.functions.showError('Please enter birth day,  please enter correctly');
       return;
@@ -191,7 +201,8 @@ const AddBankACPage = (props: Props) => {
         state:state,
         zip_code:zip,
         phone:phone,
-        dob:dateSplit
+        dob:dateSplit,
+        gender:gender
         
       }))
     }
@@ -400,13 +411,38 @@ const AddBankACPage = (props: Props) => {
                    
                       mask: '99/99/9999'
                     }}   
-                    onSubmitEditing={()=>{
-                      validateBankAccount()
-                    }}
+                    
                     returnKeyType="done"
 
              />
             </View>
+            <View regular style={[  common.mt15, common.ml0,{borderColor:"#E0DFEC",borderWidth:1,height:50}]}>
+            {
+            Platform.OS === 'ios'
+            &&
+            <Text style={[common.pr10,{paddingLeft:25,lineHeight:45}]} onPress={()=>toggleModal()}>{gender}</Text>
+          }
+          {
+            Platform.OS === 'android'
+            &&
+            <Picker
+              selectedValue={gender}
+              
+              //style={{height: 50, width: 100,marginTop:-14}}
+              style={{height:50,marginLeft:25}}
+              onValueChange={(itemValue, itemIndex) =>{
+                setGender(itemValue)
+                
+              }
+              }>
+                  
+                  <Picker.Item  label="male" value="male" />
+                  <Picker.Item  label="female" value="female" />
+            
+            
+            </Picker>
+          }
+          </View>
 
               <View style={[common.mt20]}>
                 <Button
@@ -427,6 +463,26 @@ const AddBankACPage = (props: Props) => {
         </View>
       </ScrollView>
       </KeyboardAvoidingView>
+      <Modal isVisible={isModalVisible}>
+          <View style={[common.flexbox]}>
+            <View style={[theme.boxmodel]}>
+            <Picker
+                  selectedValue={gender}
+                  style={{height: 150, width: '100%',marginTop:-30}}
+                  onValueChange={(itemValue, itemIndex) =>{
+                    toggleModal()
+                    setGender(itemValue)
+                    
+                  }
+                  }>
+                   
+                   <Picker.Item  label="male" value="male" />
+                   <Picker.Item  label="female" value="female" />
+                </Picker>
+            
+            </View>
+          </View>
+        </Modal>
     </Container>
   )
 }

@@ -6,8 +6,8 @@
  * @flow strict-local
  */
 
-import React, {Component} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {StatusBar, Image, Linking, ScrollView} from 'react-native';
 import {
   Container,
   View,
@@ -30,45 +30,74 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
-import Timeline from 'react-native-timeline-flatlist';
+import { Rating, AirbnbRating } from 'react-native-ratings';
 
-export default class RatingPage extends Component {
-  constructor() {
-    super();
-    this.data = [
-      {title: 'Request Accepted  8:30 am'},
-      {title: 'Started 8:31 am'},
-      {title: 'Reached on your location'},
-    ];
+import moment from 'moment';
+import {CommonActions} from '@react-navigation/native';
+import {showLoader, hideLoader} from '../actions/common/commonActions'
+import {appConfig} from '../appConfig'
+import {agentRating} from '../actions/moneyorder/moneyorderActions'
+import HeaderPage from './shared/header'
+import {useSelector, useDispatch} from 'react-redux'
+import io, { Socket } from 'socket.io-client'
+
+import {RootStackParamList} from '../RouteConfig'
+import {StackNavigationProp} from '@react-navigation/stack'
+import {RouteProp} from '@react-navigation/native'
+import {RootState} from '../appReducers'
+import CountryPicker, {DARK_THEME} from 'react-native-country-picker-modal'
+
+
+import { TextInputMask } from 'react-native-masked-text'
+import AsyncStorage from '@react-native-community/async-storage';
+import Storage from 'react-native-storage';
+import { acc } from 'react-native-reanimated';
+var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
+
+type NotificationPageRouteProp = RouteProp<RootStackParamList, 'RatingPage'>
+
+type NotificationPageNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'RatingPage'
+>
+
+type Props = {
+  route: NotificationPageRouteProp
+  navigation: NotificationPageNavigationProp
+}
+
+
+const RatingPage = (props:Props) => {
+
+  const dispatch = useDispatch();
+  const [data,setData] = useState(props?.route?.params?.data)
+  const [rating,setRating] = useState(0)
+
+  const ratingCompleted = (rating) =>{
+         console.log("rating",rating);
+         setRating(rating)
   }
-  render() {
+
+  const rateAgent = () =>{
+    dispatch(showLoader());
+    dispatch(agentRating({rating:rating,request_type : "money",request_id : data?.unique_id}))
+  }
+
+  const rated = useSelector((state:RootState)=>state.morder_r._rating)
+
+  useEffect(()=>{
+    if(rated != undefined){
+      if(rated.status == true){
+        props.navigation.navigate('HomePage')
+      }else{
+        appConfig.functions.showError(rated.message)
+      }
+    }
+  })
+ 
     return (
       <Container style={[theme.bgblue]}>
-        <StatusBar barStyle="dark-content" />
-        <Header
-          androidStatusBarColor="#00AFEF"
-          iosBarStyle="dark-content"
-          style={[theme.bgblue]}>
-          <Left>
-            <Button transparent>
-              <Icon
-                name="menu"
-                type="MaterialIcons"
-                style={[theme.colorblack, common.fontxxl]}
-              />
-            </Button>
-          </Left>
-          <Body />
-          <Right>
-            <Button transparent onPress={this.toggleModal}>
-              <Icon
-                name="closecircleo"
-                type="AntDesign"
-                style={[theme.colorblack, common.fontlg]}
-              />
-            </Button>
-          </Right>
-        </Header>
+       <HeaderPage back="true" title="" color="blue"/>
         <ScrollView style={[theme.bgblue]}>
           <View style={common.p20}>
             <View style={[common.center]}>
@@ -81,25 +110,38 @@ export default class RatingPage extends Component {
             <Text style={[common.white, common.textcenter]}>
               You successfully complete the payment
             </Text>
-            <Text style={[common.white, common.textcenter]}>
+            {/* <Text style={[common.white, common.textcenter]}>
               Transaction ID 252QWERTY
-            </Text>
+            </Text> */}
           </View>
 
           <View style={[theme.card]}>
             <View style={(common.pt20, common.mt20)}>
               <ListItem avatar>
                 <Left>
-                  <Thumbnail
-                    source={require('../assets/images/thumbuser.png')}
-                    style={{width: 80, height: 80, borderRadius: 40}}
+                {
+                 data?.agent_data?.profile_image != undefined && data?.agent_data?.profile_image != ''
+                 &&
+                 <Thumbnail
+                    source={{uri:data?.agent_data?.profile_image}}
+                    style={{width: 50, height: 50, borderRadius: 40}}
                   />
+             }
+             {
+                 (data?.agent_data?.profile_image == undefined || data?.agent_data?.profile_image == '')
+                 &&
+                 <Thumbnail
+                    source={require('../assets/images/no-photo.jpg')}
+                    style={{width: 50, height: 50, borderRadius: 40}}
+                  />
+             }
+             
                 </Left>
                 <Body style={[common.bordernone]}>
                   <Text style={[common.fontlg, theme.fontbold]}>
-                    James Johnson
+                    {data?.agent_data?.first_name}  {data?.agent_data?.last_name}
                   </Text>
-                  <Text note>West Windsor</Text>
+                  {/* <Text note>West Windsor</Text> */}
                   <View style={[common.flexbox, common.flexrow]}>
                     <View style={[common.flexone]}>
                       <Text style={[theme.colorblack]}>
@@ -110,13 +152,13 @@ export default class RatingPage extends Component {
                             theme.coloryellow,
                             common.fontxl,
                           ]}></Icon>{' '}
-                        4.8
+                       { data?.agent_data?.rating}
                       </Text>
                     </View>
                     <View style={[common.pl15, common.pr15]}>
-                      <Button rounded bordered small danger >
+                      {/* <Button rounded bordered small danger >
                         <Text style={[theme.textcapital]}>Report</Text>
-                      </Button>
+                      </Button> */}
                     </View>
                   </View>
                 </Body>
@@ -127,12 +169,12 @@ export default class RatingPage extends Component {
               <ListItem style={[common.bordernone]}>
                 <Body style={[common.bordernone]}>
                   <Text style={[common.fontmd, theme.fontbold]}>
-                    Ford Fusion - Blue
+                  { data?.agent_data?.vehicle_model} - { data?.agent_data?.vehicle_color}
                   </Text>
-                  <Text note>EBF9211 -</Text>
+                  <Text note>{ data?.agent_data?.vehicle_number}</Text>
                 </Body>
                 <Right>
-                  <Button rounded light style={[theme.btncall]}>
+                  <Button rounded light style={[theme.btncall]} onPress={()=>Linking.openURL(`tel:${data?.agent_data?.phone_prefix + data?.agent_data?.phone}`)}>
                     <Icon
                       name="call"
                       type="MaterialIcons"
@@ -147,45 +189,21 @@ export default class RatingPage extends Component {
                 <Text
                   note
                   style={[common.fontmd, theme.fontbold, common.textcenter]}>
-                  RATE YOUR AGENT
+                  SWIPE TO RATE YOUR AGENT
                 </Text>
                 <View style={[common.flexbox, common.flexrow, common.center]}>
-                  <TouchableOpacity style={[common.pt10, common.m5]}>
-                    <Icon
-                      name="star"
-                      type="FontAwesome"
-                      style={[theme.stargray, common.fontxxxl]}></Icon>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[common.pt10, common.m5]}>
-                    <Icon
-                      name="star"
-                      type="FontAwesome"
-                      style={[theme.stargray, common.fontxxxl]}></Icon>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[common.pt10, common.m5]}>
-                    <Icon
-                      name="star"
-                      type="FontAwesome"
-                      style={[theme.stargray, common.fontxxxl]}></Icon>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[common.pt10, common.m5]}>
-                    <Icon
-                      name="star"
-                      type="FontAwesome"
-                      style={[theme.stargray, common.fontxxxl]}></Icon>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[common.pt10, common.m5]}>
-                    <Icon
-                      name="star"
-                      type="FontAwesome"
-                      style={[theme.stargray, common.fontxxxl]}></Icon>
-                  </TouchableOpacity>
+                <Rating
+                    defaultRating = {0}
+                    onFinishRating={ratingCompleted}
+                    style={{ paddingVertical: 10 }}
+                  />
                 </View>
               </View>
               <View style={[common.p15, {height: 140}]}>
                 <View
                   style={[
                     common.flexone,
+                    common.flexrow,
                     common.m5,
                     common.center,
                     common.mb20,
@@ -198,8 +216,10 @@ export default class RatingPage extends Component {
                       {height: 60},
                       common.pr20,
                       common.pl20,
+                      common.mr10
                     ]}
-                    onPress={this.toggleModal}>
+                    onPress={()=>rateAgent()}
+                  >
                     <Text
                       style={[
                         common.fontlg,
@@ -210,6 +230,27 @@ export default class RatingPage extends Component {
                       Submit
                     </Text>
                   </Button>
+                  <Button
+                    rounded
+                    danger
+                    style={[
+                      theme.bgblue,
+                      {height: 60},
+                      common.pr20,
+                      common.pl20,
+                    ]}
+                    onPress={()=>props.navigation.navigate('HomePage')}
+                  >
+                    <Text
+                      style={[
+                        common.fontlg,
+                        theme.textcapital,
+                        common.pl20,
+                        common.pr20,
+                      ]}>
+                      Skip
+                    </Text>
+                  </Button>
                 </View>
               </View>
             </View>
@@ -217,5 +258,7 @@ export default class RatingPage extends Component {
         </ScrollView>
       </Container>
     );
-  }
+ 
 }
+
+export default RatingPage

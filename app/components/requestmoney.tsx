@@ -29,6 +29,7 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
+import LocationServicesDialogBox from "react-native-android-location-services-dialog-box";
 import MapModal from './shared/map/mapModal';
 import Thumb from '../components/shared/slider/thumb';
 import Rail from '../components/shared/slider/rail';
@@ -37,7 +38,8 @@ import Notch from '../components/shared/slider/notch';
 import LabelS from '../components/shared/slider/label';
 import Carousel from 'react-native-snap-carousel';
 import RangeSlider from 'rn-range-slider';
-import Geolocation from '@react-native-community/geolocation';
+//import Geolocation from '@react-native-community/geolocation';
+import GetLocation from 'react-native-get-location'
 import {lightblue} from 'color-name';
 import HeaderPage from './shared/header';
 import { RootStackParamList } from '../RouteConfig';
@@ -64,6 +66,8 @@ type Props = {
     navigation: NotificationPageNavigationProp;
 };
 
+//var watchId:any = null
+
 const RequestMoney = (props:Props) => {
   const dispatch = useDispatch();
   const courosel = useRef(null);
@@ -73,24 +77,24 @@ const RequestMoney = (props:Props) => {
       title: '100',
     },
     {
-      title: '150',
-    },
-    {
       title: '200',
     },
     {
-      title: '250',
+      title: '300',
     },
     {
-      title: '300',
+      title: '400',
+    },
+    {
+      title: '500',
     },])
 
 
 
     const [activeIndex,setActiveIndex] = useState(0);
-    const [rangeLow,setRangeLow] = useState(0)
-    const [rangeHigh,setRangeHigh] = useState(3)
-    const [maxRange,setMaxRange] = useState(3)
+    const [rangeLow,setRangeLow] = useState(0.5)
+    const [rangeHigh,setRangeHigh] = useState(5)
+    const [maxRange,setMaxRange] = useState(5)
   
     const [address,setAddress] =  useState('')
     const [isvisible,setIsvisible] =  useState(false)
@@ -101,6 +105,7 @@ const RequestMoney = (props:Props) => {
       const [currentLongitude,setCurrentLongitude] = useState(0);
       const [currentLatitude,setCurrentLatitude] = useState(0);
       const [locationStatus,setLocationStatus] = useState('');
+      const [error,setError] = useState("");
   
   
 
@@ -112,91 +117,110 @@ const RequestMoney = (props:Props) => {
 
  
 
-const getOneTimeLocation = () => {
-    setLocationStatus('Getting Location ...');
-    Geolocation.getCurrentPosition(
-      //Will give you the current location
-      (position) => {
-      
-        setLocationStatus('You are Here');
-         console.log("position",position)
-        //getting the Longitude from the location json
-        const currentLongitude = position.coords.longitude;
-
-        //getting the Latitude from the location json
-        const currentLatitude = position.coords.latitude;
-
-        //Setting Longitude state
-        setCurrentLongitude(currentLongitude);
+// const getOneTimeLocation = () => {
+   
+//     watchId =  Geolocation.watchPosition(
+//       pos => {
+//         setError("");
+//         console.log("coordinates",pos.coords)
+//         const currentLatitude = pos.coords.latitude;
+//         const currentLongitude = pos.coords.longitude;
+//         setCurrentLatitude(currentLatitude);
+//         setCurrentLongitude(currentLongitude);
+//         setRegion({latitude: currentLatitude,
+//           longitude: currentLongitude,
+//           latitudeDelta: 0.0922,
+//           longitudeDelta: 0.0421,})
         
-        //Setting Longitude state
-        setCurrentLatitude(currentLatitude);
+//         fetch("https://maps.googleapis.com/maps/api/geocode/json?latlng=" + currentLatitude + "," + currentLongitude + "&key="+ appConfig.GoogleApiKey)
+//         .then((response)=>response.json())
+//         .then((response)=>{
+          
+        
+//          setAddress(response?.results[0]?.formatted_address)
+//         })
+//         .catch((error)=>{
+          
+//            appConfig.functions.showError('Google places error')
+//         })
+//         dispatch(getMoneyParams())
+        
+//       },
+//       e => {
+//         setError(e.message)
+//         dispatch(getMoneyParams())
+//       }
+//     );
 
-        setRegion({latitude: currentLatitude,
-          longitude: currentLongitude,
+//   };
+
+
+  useEffect(()=>{
+    
+    dispatch(showLoader());
+    GetLocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 15000,
+    })
+    .then(location => {
+      setCurrentLatitude(location.latitude);
+      setCurrentLongitude(location.longitude);
+    
+    console.log(location);
+   
+        setRegion({latitude: location.latitude,
+          longitude: location.longitude,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,})
-          dispatch(showLoader());
-        fetch("https://maps.googleapis.com/maps/api/geocode/json?latlng=" + currentLatitude + "," + currentLongitude + "&key="+ appConfig.GoogleApiKey)
+        
+        fetch("https://maps.googleapis.com/maps/api/geocode/json?latlng=" + location.latitude + "," + location.longitude + "&key="+ appConfig.GoogleApiKey)
         .then((response)=>response.json())
         .then((response)=>{
           
         
          setAddress(response?.results[0]?.formatted_address)
         })
-        .catch((error)=>{
-          
-           appConfig.functions.showError('Google places error')
-        })
         dispatch(getMoneyParams())
-
-      },
-      (error) => {
-        setLocationStatus(error.message);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 1000
-      },
-    );
-  };
-
-
-  useEffect(()=>{
-     
-    dispatch(showLoader());
+  })
+  .catch(error => {
+      const { code, message } = error;
+      console.warn(code, message);
+      dispatch(getMoneyParams())
+    
+  })
     
     
-    const requestLocationPermission = async () => {
-      if (Platform.OS === 'ios') {
-        getOneTimeLocation();
+    // const requestLocationPermission = async () => {
+    //   if (Platform.OS === 'ios') {
+    //     dispatch(showLoader());
+    //     getOneTimeLocation();
        
-      } else {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            {
-              title: 'Location Access Required',
-              message: 'WUW App needs to Access your location',
-            },
-          );
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            //To Check, If Permission is granted
-            getOneTimeLocation();
+    //   } else {
+    //     try {
+    //       const granted = await PermissionsAndroid.request(
+    //         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    //         {
+    //           title: 'Location Access Required',
+    //           message: 'WUW App needs to Access your location',
+    //         },
+    //       );
+    //       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+    //         //To Check, If Permission is granted
+    //         dispatch(showLoader());
+    //         getOneTimeLocation();
           
-          } else {
-            setLocationStatus('Permission Denied');
+    //       } else {
+    //         setLocationStatus('Permission Denied');
             
-          }
-        } catch (err) {
+    //       }
+    //     } catch (err) {
           
-          console.warn(err);
-        }
-      }
-    };
-    requestLocationPermission();
-  
+    //       console.warn(err);
+    //     }
+    //   }
+    // };
+    // requestLocationPermission();
+   
   },[])
 
   const range = useSelector((state:RootState)=>state.mrequest_r._moneyRange)
@@ -204,13 +228,14 @@ const getOneTimeLocation = () => {
   useEffect(()=>{
     if(range != undefined){
       dispatch(hideLoader())
+      //Geolocation.clearWatch(watchId)
       if(range.status == true){
         var a = [];
         for(let i=0;i<range?.data?.money_rates?.length;i++){
-          console.log("insideloop",range?.data?.money_rates[i]);
+          
              a.push({"title": range?.data?.money_rates[i]})
         }
-        console.log("array",a);
+        
         setCourselItems([...a])
         setMaxRange(range?.data?.max_time_duration)
       }else{
@@ -305,6 +330,10 @@ const getOneTimeLocation = () => {
   );
 }
  
+ let timee = rangeLow.toString().split('.');
+
+ let hr = timee[0];
+ let min = timee[1];
   
     return (
       <Container>
@@ -327,7 +356,7 @@ const getOneTimeLocation = () => {
               Lets get started
             </Text>
             <Text style={[common.center, theme.colorblack]}>
-              One line description about money request
+            No more ATM lines. Get your money anywhere
             </Text>
           </View>
 
@@ -384,7 +413,7 @@ const getOneTimeLocation = () => {
               </Text>
                <View >
                     <Text style={[common.white,common.textcenter,common.fontbold,common.fontxl]}>
-                        {rangeLow} <Text style={[common.white]}>hr</Text>
+                        {hr=='0'?'':hr} {hr!='0'&&<Text style={[common.white]}>hr</Text>} {min?30:''} {min&&<Text style={[common.white]}>min</Text>}
                     </Text>
                    
                </View>
@@ -392,9 +421,9 @@ const getOneTimeLocation = () => {
                 <RangeSlider
                   style={{width: '100%', height: 80}}
                   gravity={'center'}
-                  min={0}
+                  min={0.5}
                   max={maxRange}
-                  step={1}
+                  step={.5}
                   rangeEnabled={false}
                   disableRange={true}
                   renderThumb={renderThumb}

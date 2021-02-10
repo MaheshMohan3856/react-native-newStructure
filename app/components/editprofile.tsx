@@ -282,7 +282,7 @@ const EditProfile = (props:Props) => {
                      value={firstName}
                      onChangeText={(name)=>{setFirstName(name)}}
                     ref={inputFirstName}
-                    onSubmitEditing={()=>{inputLastName._root.focus()}}
+                  //  onSubmitEditing={()=>{inputLastName._root.focus()}}
                     returnKeyType="next"
                   />
                 </View>

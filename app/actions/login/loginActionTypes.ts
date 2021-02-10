@@ -1,5 +1,7 @@
 export const LOGIN = "LOGIN";
 
+export const LOGOUT = "LOGOUT";
+
 export const SIGNUP = "SIGNUP";
 
 export const VERIFY_PHONE = "VERIFY_PHONE";
@@ -15,3 +17,4 @@ export const RESET = "RESET";
 export const DELETE = "DELETE";
 
 export const VERIFY_NEW_PHONE = "VERIFY_NEW_PHONE";
+

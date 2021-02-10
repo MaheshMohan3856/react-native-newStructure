@@ -29,8 +29,9 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
+import firestore from '@react-native-firebase/firestore';
 import {CommonActions} from '@react-navigation/native';
-import {_login,_deleteAccount} from '../actions/login/loginActions';
+import {_login,_deleteAccount,logoutUser} from '../actions/login/loginActions';
 import {useDispatch,useSelector} from 'react-redux';
 import HeaderPage from './shared/header';
 
@@ -40,6 +41,8 @@ import { RouteProp } from '@react-navigation/native';
 import { RootState } from '../appReducers';
 import AsyncStorage from '@react-native-community/async-storage';
 import Storage from 'react-native-storage';
+import { hideLoader, showLoader } from '../actions/common/commonActions';
+import { appConfig } from '../appConfig';
 var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
 
 type NotificationPageRouteProp = RouteProp<RootStackParamList, 'Settings'>;
@@ -86,23 +89,10 @@ const Settings = (props:Props) => {
     [
         { text: 'cancel' },
         { text: 'yes', onPress: () => { 
-
+          dispatch(showLoader())
           dispatch(_login(undefined));
           dispatch(_deleteAccount())
-            setTimeout(()=>{
-              storage.remove({key:'userData'});
-              AsyncStorage.removeItem('@access_token');
-               AsyncStorage.removeItem('@refresh_token');
-               props.navigation.dispatch(
-                CommonActions.reset({
-                  index: 1,
-                  routes: [
-                    { name: 'LandingPage' },
-                    
-                  ],
-                })
-              );
-            },500)
+           
              
           } 
         }
@@ -118,10 +108,25 @@ const Settings = (props:Props) => {
         { text: 'yes', onPress: () => { 
 
           dispatch(_login(undefined));
+          dispatch(logoutUser())
+          AsyncStorage.getItem('home').then((reshome)=>{
+            if(reshome == 'AgentHome'){
+              storage.load({key:"userData"}).then((ret)=>{
+                firestore()
+                .collection('Users')
+                .doc(ret.uuid)
+                .delete()
+                .then(() => {
+                  console.log('User deleted!');
+                });
+              })
+            }
+          })
             setTimeout(()=>{
               storage.remove({key:'userData'});
               AsyncStorage.removeItem('@access_token');
                AsyncStorage.removeItem('@refresh_token');
+               AsyncStorage.removeItem('home');
                props.navigation.dispatch(
                 CommonActions.reset({
                   index: 1,
@@ -138,6 +143,47 @@ const Settings = (props:Props) => {
       ]
   )
   }
+
+  const deletedAcc = useSelector((state:RootState)=>state.login_r._delete)
+
+  useEffect(()=>{
+      if(deletedAcc != undefined){
+        dispatch(hideLoader())
+        if(deletedAcc.status == true){
+          dispatch(logoutUser())
+          AsyncStorage.getItem('home').then((reshome)=>{
+            if(reshome == 'AgentHome'){
+              storage.load({key:"userData"}).then((ret)=>{
+                firestore()
+                .collection('Users')
+                .doc(ret.uuid)
+                .delete()
+                .then(() => {
+                  console.log('User deleted!');
+                });
+              })
+            }
+          })
+          setTimeout(()=>{
+              storage.remove({key:'userData'});
+              AsyncStorage.removeItem('@access_token');
+              AsyncStorage.removeItem('@refresh_token');
+              AsyncStorage.removeItem('home');
+              props.navigation.dispatch(
+                CommonActions.reset({
+                  index: 1,
+                  routes: [
+                    { name: 'LandingPage' },
+                    
+                  ],
+                })
+              );
+          },500)
+        }else{
+          appConfig.functions.showError(deletedAcc.message)
+        }
+      }
+  },[deletedAcc])
  
     return (
       <Container>
@@ -196,6 +242,9 @@ const Settings = (props:Props) => {
               </TouchableOpacity>
               <TouchableOpacity style={[common.p20]} onPress={logout}>
                 <Text>Sign Out</Text>
+              </TouchableOpacity>
+              <TouchableOpacity activeOpacity={0.8}  style={[common.p20]}>
+                <Text style={{color:"#696969"}}>Version : 0.0.6</Text>
               </TouchableOpacity>
              
             </View>

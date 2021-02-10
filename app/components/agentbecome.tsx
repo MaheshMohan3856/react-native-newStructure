@@ -109,7 +109,7 @@ const AgentBecome = (props:Props) => {
                   </View>
                  <View>
                  <Text style={[common.white, common.fontlg, common.fontbold, common.pt5]}>Money Services</Text>
-                  <Text style={[common.white, common.fontsm, {width: 200}]}>Pickup & Delivery of laundry services from the laundry mart near by you</Text>
+                  <Text style={[common.white, common.fontsm, {width: 200}]}>Manage your money to earn more</Text>
                 </View>
                 </View>
                 </View>
@@ -142,7 +142,7 @@ const AgentBecome = (props:Props) => {
                   </View>
                  <View>
                  <Text style={[common.white, common.fontlg, common.fontbold, common.pt5]}>Money Services</Text>
-                  <Text style={[common.white, common.fontsm, {width: 200}]}>Pickup & Delivery of laundry services from the laundry mart near by you</Text>
+                  <Text style={[common.white, common.fontsm, {width: 200}]}>Manage your money to earn more</Text>
                 </View>
                 </View>
                 </View>
@@ -176,7 +176,7 @@ const AgentBecome = (props:Props) => {
                   </View>
                  <View>
                  <Text style={[common.white, common.fontlg, common.fontbold,common.pt5]}>Laundry Services</Text>
-                  <Text style={[common.white, common.fontsm, {width: 200}]}>Pickup & Delivery of laundry services from the laundry mart near by you</Text>
+                  <Text style={[common.white, common.fontsm, {width: 200}]}>Manage your time to earn at your pace</Text>
                 </View>
                 </View>
                 </View>
@@ -211,7 +211,7 @@ const AgentBecome = (props:Props) => {
                   </View>
                  <View>
                  <Text style={[common.white, common.fontlg, common.fontbold,common.pt5]}>Laundry Services</Text>
-                  <Text style={[common.white, common.fontsm, {width: 200}]}>Pickup & Delivery of laundry services from the laundry mart near by you</Text>
+                  <Text style={[common.white, common.fontsm, {width: 200}]}>Manage your time to earn at your pace</Text>
                 </View>
                 </View>
                 </View>

@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React from 'react';
+import React,{useRef,useState,useEffect} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -14,6 +14,7 @@ import {
   View,
   Text,
   StatusBar,
+  AppState
 } from 'react-native';
 
 import {
@@ -23,6 +24,7 @@ import {
   DebugInstructions,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import FlashMessage from "react-native-flash-message";
 import {Root} from 'native-base'
 import 'react-native-gesture-handler';
 import {NavigationContainer} from '@react-navigation/native';
@@ -32,14 +34,40 @@ import store from './app/store';
 import Loading from './app/components/shared/loader';
 
 const App = () => {
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(appState.current);
+
+  useEffect(() => {
+    AppState.addEventListener("change", _handleAppStateChange);
+
+    return () => {
+      AppState.removeEventListener("change", _handleAppStateChange);
+    };
+  }, []);
+
+  const _handleAppStateChange = (nextAppState) => {
+    
+    
+    appState.current = nextAppState;
+    setAppStateVisible(appState.current);
+    if(appState.current == "active"){
+      console.log("App has come to the foreground!");
+      
+    }else{
+      console.log("App has come to the background!");
+    }
+    
+  };
+
   return (
     <StoreProvider store={store}>
     <Root>
       <Loading />
+      
      <NavigationContainer>
        <AppNavigator />
      </NavigationContainer>
-     
+     <FlashMessage style={{marginTop:20}} position="top" duration={3000} />
      </Root>
     </StoreProvider>
   );

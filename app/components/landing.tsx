@@ -75,7 +75,7 @@ const LandingPage = (props:Props) => {
             Let's get started
           </Text>
           <Text style={[common.center, theme.colorblack]}>
-            One line description about the WUW
+          Save time and make money
           </Text>
         </View>
         <View style={[common.pt10, common.pb10]}>

@@ -1,4 +1,4 @@
-import {LOGIN,SIGNUP,VERIFY_PHONE,VERIFY_EMAIL,RESEND,FORGOT,RESET,DELETE,VERIFY_NEW_PHONE} from '../actions/login/loginActionTypes';
+import {LOGIN,LOGOUT,SIGNUP,VERIFY_PHONE,VERIFY_EMAIL,RESEND,FORGOT,RESET,DELETE,VERIFY_NEW_PHONE} from '../actions/login/loginActionTypes';
 
 
 
@@ -7,6 +7,9 @@ export default function (state:any={}, action:any){
      
         case LOGIN:
             return {_login:action.result}
+ 
+        case LOGOUT:
+            return {_logout:action.result}
         case SIGNUP:
             return {_signup:action.result}
         case VERIFY_PHONE:

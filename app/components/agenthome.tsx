@@ -7,7 +7,7 @@
  */
 
 import React, {useEffect,useState} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView,Platform,PermissionsAndroid} from 'react-native';
+import {Alert,StatusBar, Image, TouchableOpacity, ScrollView,Platform,PermissionsAndroid,Linking,RefreshControl} from 'react-native';
 import ProgressCircle from 'react-native-progress-circle'
 import {
   Container,
@@ -34,14 +34,17 @@ import {common} from '../css/common';
 //import firestore from '@react-native-firebase/firestore';
 import * as geofirestore from 'geofirestore';
 import firebase from '@react-native-firebase/app';
+
 import { lightblue } from 'color-name';
-import Geolocation from '@react-native-community/geolocation';
+//import Geolocation from '@react-native-community/geolocation';
+import GetLocation from 'react-native-get-location'
 import {CommonActions} from '@react-navigation/native';
 import {showLoader, hideLoader} from '../actions/common/commonActions'
 import {appConfig} from '../appConfig'
-import { getRequestList,acceptMoneyRequest} from '../actions/accept/acceptActions'
+import { getRequestList,acceptMoneyRequest,cancelRequest,agentAcceptLaundryRequest,cancelLaundryRequest} from '../actions/accept/acceptActions'
 import HeaderPage from './shared/header'
 import {useSelector, useDispatch} from 'react-redux'
+import io, { Socket } from 'socket.io-client'
 
 import {RootStackParamList} from '../RouteConfig'
 import {StackNavigationProp} from '@react-navigation/stack'
@@ -68,6 +71,8 @@ type Props = {
   navigation: NotificationPageNavigationProp
 }
 
+//var watchId:any = null
+
 // var firebaseConfig = {
 //     apiKey: "AIzaSyBBRJJRhgZzjprChQ-5Fo8X-lTiO9uB8gs",
 //     authDomain: "whateveruwant-b092b.firebaseapp.com",
@@ -84,104 +89,143 @@ type Props = {
 const AgentHome = (props:Props) => {
 
   const dispatch = useDispatch()
+  const [error,setError] = useState('')
+  const [refreshing, setRefreshing] = useState(false);
 
   const [currentLongitude,setCurrentLongitude] = useState(0);
   const [currentLatitude,setCurrentLatitude] = useState(0);
   const [locationStatus,setLocationStatus] = useState('');
   const [list,setList] = useState([])
+  const [laundlist,setLaundlist] = useState([])
   const [acceptData,setAcceptData] = useState({})
+  
+  // const getOneTimeLocation = () => {
+    
+  //   watchId =  Geolocation.watchPosition(
+  //     pos => {
+  //       setError("");
+  //       console.log("coordinates",pos.coords)
+  //       const currentLatitude = pos.coords.latitude;
+  //       const currentLongitude = pos.coords.longitude;
+  //       setCurrentLatitude(currentLatitude);
+  //       setCurrentLongitude(currentLongitude);
+  //       storage.load({key:'userData'}).then((ret)=>{
 
-  const getOneTimeLocation = () => {
-    setLocationStatus('Getting Location ...');
-    Geolocation.getCurrentPosition(
-      //Will give you the current location
-      (position) => {
-      
-        setLocationStatus('You are Here');
-         console.log("position",position)
-        //getting the Longitude from the location json
-        const currentLongitude = position.coords.longitude;
-
-        //getting the Latitude from the location json
-        const currentLatitude = position.coords.latitude;
-
-        //Setting Longitude state
-        setCurrentLongitude(currentLongitude);
-        
-        //Setting Longitude state
-        setCurrentLatitude(currentLatitude);
-        
-        storage.load({key:'userData'}).then((ret)=>{
-
-          const firestore = firebase.firestore();
+  //         const firestore = firebase.firestore();
 
 
-          const GeoFirestore = geofirestore.initializeApp(firestore);
+  //         const GeoFirestore = geofirestore.initializeApp(firestore);
 
 
-          const geocollection = GeoFirestore.collection('Users');
+  //         const geocollection = GeoFirestore.collection('Users');
          
-          const documentReference = geocollection.doc(ret.uuid);
-          documentReference.set({ geopoint: new firebase.firestore.GeoPoint(currentLatitude, currentLongitude) }, { customKey: 'geopoint' })
-            .then((result) => {console.log("result",result)})
-            .catch((error)=>{
-                console.log("error",error);
-              })
+  //         const documentReference = geocollection.doc(ret.uuid);
+  //         documentReference.set({ geopoint: new firebase.firestore.GeoPoint(currentLatitude, currentLongitude) }, { customKey: 'geopoint' })
+  //           .then((result) => {console.log("result",result)})
+  //           .catch((error)=>{
+  //               console.log("error",error);
+  //             })
             
             
-        })
+  //       })
         
         
-        dispatch(getRequestList())
-       
+  //       dispatch(getRequestList())
+        
+  //     },
+  //     e => {
+  //       setError(e.message)
+  //       dispatch(getRequestList())
+  //     }
+  //   );
 
-      },
-      (error) => {
-        setLocationStatus(error.message);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 1000
-      },
-    );
-  };
+  // };
+  const refreshToken = useSelector((state:RootState)=>state.token_r._token.refreshtoken);
+ const token = useSelector((state:RootState)=>state.token_r._token.token);
+ 
+ 
 
   useEffect(()=>{
     
-    const requestLocationPermission = async () => {
-      dispatch(showLoader());
-      if (Platform.OS === 'ios') {
-        getOneTimeLocation();
-       
-      } else {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            {
-              title: 'Location Access Required',
-              message: 'WUW App needs to Access your location',
-            },
-          );
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+    const unsubscribe = props.navigation.addListener('focus', () => {
 
-            //To Check, If Permission is granted
-            getOneTimeLocation();
-          
-          } else {
-            
+
+ 
+      console.log("token",token);
+      console.log("refreshToken",refreshToken);
+   
+      const  socket = io(appConfig.apiSocketBaseUrl,{query:{token,refreshToken}})
+  
+      socket.on('connect',function(){
+        console.log("connected",socket.connected);
+      });
+      socket.on('connect_error',function(data){
+         console.log('errrrrrrooorrr',data)
+      })
+      storage.load({key:'userData'}).then((ret)=>{
+        console.log('ret.email',ret.email);
+        socket.on(ret.email,function(data){
+          console.log("data",data);
+          if(data?.cmd == 'new_money_request' || data?.cmd ==  "new_pickup_laundry_request" || data?.cmd == "new_delivery_laundry_request" || data?.cmd == "refresh_req_list" || data?.cmd == "remove_money_request" || data?.cmd == "remove_laundry_request" || data?.cmd == "accepted_by_another_agent"){
             dispatch(getRequestList())
-            setLocationStatus('Permission Denied');
-            
           }
-        } catch (err) {
-         
+        })
+      })
+      dispatch(showLoader());
+        GetLocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 15000,
+        })
+        .then(location => {
+          setCurrentLatitude(location.latitude);
+          setCurrentLongitude(location.longitude);
+        
+        console.log(location);
+      
+        storage.load({key:'userData'}).then((ret)=>{
+
+                  const firestore = firebase.firestore();
+        
+        
+                  const GeoFirestore = geofirestore.initializeApp(firestore);
+        
+        
+                  const geocollection = GeoFirestore.collection('Users');
+                 
+                  if(ret.uuid){
+                    const documentReference = geocollection.doc(ret.uuid);
+                    documentReference.set({ geopoint: new firebase.firestore.GeoPoint(location.latitude, location.longitude) }, { customKey: 'geopoint' })
+                      .then((result) => {console.log("result",result)})
+                      .catch((error)=>{
+                          console.log("error",error);
+                        })
+                  }
+                  
+                    
+                    
+                })
+                
+                
+                dispatch(getRequestList())
+      })
+      .catch(error => {
+          const { code, message } = error;
+          console.warn(code, message);
           dispatch(getRequestList())
-          console.warn(err);
-        }
-      }
-    };
-    requestLocationPermission();
+        
+      })
+      const unsubscribeblur = props.navigation.addListener('blur', () => {
+        console.log('blurrrrr');
+        socket.emit('manual_disconnect')
+     })
+     return unsubscribeblur;
+  
+
+    });
+    
+    return unsubscribe;
+   
+  
   },[props.navigation])
 
   const requests = useSelector((state:RootState)=>state.accept_r._requestList)
@@ -189,9 +233,12 @@ const AgentHome = (props:Props) => {
   useEffect(()=>{
     if(requests != undefined){
       dispatch(hideLoader());
+      setRefreshing(false);
+     // Geolocation.clearWatch(watchId)
       if(requests.status == true){
         console.log("requests",requests);
-        setList(requests?.request_list)
+        setList(requests?.data?.money_request_list)
+        setLaundlist(requests?.data?.laundry_request_list)
       }else{
         appConfig.functions.showError(requests.message)
       }
@@ -216,11 +263,51 @@ const AgentHome = (props:Props) => {
     return minutes
   }
 
+  function getDeliveryTime(starttime,interval){
+   
+    var endtime = new Date(starttime);
+    
+   var splittime = interval.split('.');
+  
+    endtime.setHours( endtime.getHours() + parseInt(splittime[0]) );
+    if(splittime[1] != undefined){
+      endtime.setMinutes(endtime.getMinutes() + 30)
+    }
+    var time = endtime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+   
+      console.log('time',time);
+    
+     
+    
+    return time
+  }
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    dispatch(getRequestList())
+    
+  }, []);
+
+
   const acceptRequest = (data) => {
     dispatch(showLoader());
     dispatch(acceptMoneyRequest({unique_money_request_id:data.unique_money_request_id}))
     setAcceptData(data);
   }
+
+  const acceptLaundryRequest = (data) => {
+    dispatch(showLoader());
+    if(data?.agent_request_type == 'pickup'){
+      dispatch(agentAcceptLaundryRequest({unique_laundry_request_id:data.unique_laundry_request_id,order_status:'pickup_agent_accept'}))
+    }else{
+      dispatch(agentAcceptLaundryRequest({unique_laundry_request_id:data.unique_laundry_request_id,order_status:'delivery_agent_accept'}))
+    }
+    
+    setAcceptData(data);
+  }
+
+
+  
 
   const accepted = useSelector((state:RootState)=>state.accept_r._acceptRequest)
 
@@ -228,13 +315,82 @@ const AgentHome = (props:Props) => {
    if(accepted != undefined){
      dispatch(hideLoader());
      if(accepted.status == true){
-       props.navigation.navigate('AgentArrived',{data:acceptData,lat:currentLatitude,lng:currentLongitude})
+       props.navigation.navigate('AgentArrived',{data:acceptData,lat:currentLatitude,lng:currentLongitude,status:"accepted",service:'money'})
      }else{
        appConfig.functions.showError(accepted.message);
      }
    }
   },[accepted])
+
+  const acceptLaundry = useSelector((state:RootState)=>state.accept_r._acceptLaundry);
+
+  useEffect(()=>{
+    if(acceptLaundry != undefined){
+      dispatch(hideLoader());
+      
+      if(acceptLaundry.status == true){
+        if(acceptData?.agent_request_type == 'pickup'){
+          props.navigation.navigate('AgentArrived',{data:acceptData,lat:currentLatitude,lng:currentLongitude,status:"pickup_agent_accept",service:'laundry'})
+        }else{
+          props.navigation.navigate('AgentArrived',{data:acceptData,lat:currentLatitude,lng:currentLongitude,status:"delivery_agent_accept",service:'laundry'})
+        }
+        }else{
+        appConfig.functions.showError(acceptLaundry.message)
+      }
+    }
+  })
+
+
+  const cancelThisRequest = (data,index)=>{
+    Alert.alert('Cancel', 'Are you sure you want to cancel this request?',
+    [
+        { text: 'cancel' },
+        { text: 'yes', onPress: () => { 
+           dispatch(showLoader())
+           
+              dispatch(cancelRequest({unique_money_request_id:data.unique_money_request_id}))
+        }}])
+  }
+
+  const cancelThisLaundryRequest = (data,index)=>{
+    Alert.alert('Cancel', 'Are you sure you want to cancel this request?',
+    [
+        { text: 'cancel' },
+        { text: 'yes', onPress: () => { 
+            dispatch(showLoader())
+            
+              dispatch(cancelLaundryRequest({unique_laundry_request_id:data.unique_laundry_request_id,order_status:"pickup_agent_reject"}))
+        }}])
+  }
+
+  const moneyCancel = useSelector((state:RootState)=>state.accept_r._mrCancel)
+  
+  useEffect(()=>{
+     if(moneyCancel != undefined){
+       
+       if(moneyCancel.status == true){
+             dispatch(getRequestList())
+       }else{
+         dispatch(hideLoader())
+         appConfig.functions.showError(moneyCancel.message)
+       }
+     }
+  },[moneyCancel])
+
+  const laundryCancel = useSelector((state:RootState)=>state.accept_r._lrCancel)
  
+  useEffect(()=>{
+    if(laundryCancel != undefined){
+      
+      if(laundryCancel.status == true){
+        dispatch(getRequestList())
+      }else{
+        dispatch(hideLoader())
+        appConfig.functions.showError(laundryCancel.message)
+      }
+    }
+  },[laundryCancel])
+
     return (
       <Container style={[theme.primarybackground]}>
         <HeaderPage back={false} title="" color="blue" right="agent" isAgent={true}/>
@@ -264,90 +420,16 @@ const AgentHome = (props:Props) => {
               </View>
           </Right>
         </Header> */}
-        <ScrollView >
+        <ScrollView
+         refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        >
           
         <View style={[common.pb20]}>
-        {/* <View style={[common.pl20, common.pr20,common.pt20,]}>
-          <View style={[common.whitebg, common.border]}>
-          <ListItem avatar >
-            <Left>
-              <Thumbnail
-                source={require('../assets/images/laundry_icon.png')}
-                style={{width: 35, height: 35, borderRadius: 40}}
-              />
-            </Left>
-            <Body style={[common.bordernone]}>
-            <Text style={[common.colorblack, common.fontbody, common.fontbold]}>#1236</Text>
-            <Text style={[theme.graytext, common.fontsm]}>Laundry Pickup </Text>
-            </Body>
-            <View style={[common.pl15, common.pr15]}>
-            <Text style={[theme.graytext, common.fontsm]}>1m</Text>
-            </View>
-          </ListItem>
-
-          <View style={[theme.lightblue,common.pb15]}>
-
-          <View style={[common.flexbox,common.flexrow,common.justifybetween,common.pl15,common.pt15,common.pr15]}>
-          <Text style={[common.fontxs, theme.fontbold, theme.graytext,]}>PICKUP</Text>
-          
-          </View>
-          <ListItem avatar>
-            <Left>
-              <Thumbnail
-                source={require('../assets/images/thumbuser.png')}
-                style={{width: 50, height: 50, borderRadius: 40}}
-              />
-            </Left>
-            <Body style={[common.bordernone]}>
-            <Text style={[common.colorblack, common.fontbody, common.fontbold]}>Grame Smith</Text>
-            <Text style={[common.colorblack, common.fontsm]}>600 Alexander Rd, NJ 58550</Text>
-            <Text style={[theme.fontbold,common.fontxs,theme.themecolor]}>Pickup - Today 10:00 AM</Text>
-            </Body>
-            <View>
-            <Button style={[theme.callbtn,common.mr15]}>
-                    <Icon
-                      name="call"
-                      type="MaterialIcons"
-                      style={[theme.white, common.fontlg, common.white]}
-                    />
-                </Button>
-            </View>
-          </ListItem>
-          <Text style={[common.fontxs, theme.fontbold, theme.graytext,common.pl15,common.pt15,common.pr15]}>DELIVERY</Text>
-          <ListItem avatar>
-            <Left>
-              <Thumbnail
-                source={require('../assets/images/thumbslider.png')}
-                style={{width: 50, height: 50, borderRadius: 10}}
-              />
-            </Left>
-            <Body style={[common.bordernone]}>
-            <Text style={[common.colorblack, common.fontbody, common.fontbold]}>Lavo Laundry & Dry </Text>
-            <Text style={[common.colorblack, common.fontsm]}>600 Alexander Rd, NJ 58550</Text>
-            </Body>
-            <View>
-            <Button style={[theme.callbtn,common.mr15]}>
-                    <Icon
-                      name="call"
-                      type="MaterialIcons"
-                      style={[theme.white, common.fontlg, common.white]}
-                    />
-                </Button>
-            </View>
-          </ListItem>
-        </View>
-            <View style={[common.flexbox,common.flexrow]}>
-              <Button style={[theme.cancelbtn,common.center,common.w50]}>
-                <Text style={[common.center,common.fontmd,common.fontbold]}>Cancel</Text>
-              </Button>
-              <Button style={[theme.primarybtn,common.center,common.w50]}>
-                <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Accept</Text>
-              </Button>
-            </View>
-          </View>
-        </View> */}
+        
         {
-          list != undefined && list.length > 0 && list.map((item,index)=>{
+          list != undefined && list?.length > 0 && list.map((item,index)=>{
             return(
               <View style={[common.pl20, common.pr20,common.pt20,]} key={index}>
               <View style={[common.whitebg, common.border]}>
@@ -359,16 +441,16 @@ const AgentHome = (props:Props) => {
                   />
                 </Left>
                 <Body style={[common.bordernone,{flex:3}]}>
-                <Text style={[common.colorblack, common.fontbody, common.fontbold,{alignItems: 'center',paddingTop:10}]}>#{item.unique_money_request_id}</Text>
+                <Text style={[common.colorblack, common.fontbody, common.fontbold,{alignItems: 'center',paddingTop:10}]}>#{item?.unique_money_request_id}</Text>
                 <View style={[common.flexbox,common.flexrow,{alignItems: 'center',paddingTop:10}]}>
                   <Text style={[theme.graytext, common.fontsm]}>Money Request </Text>
-            <Text style={[theme.colorblack, common.fontmd, common.fontbold]}>${item.original_amount}</Text>
+            <Text style={[theme.colorblack, common.fontmd, common.fontbold]}>${item?.original_amount}</Text>
                 </View>
                 </Body>
                 <Right style={{flex:5}}>
                   <View style={[common.ml15, ]}>
                     <Button rounded bordered small danger >
-                      <Text style={[theme.textcapital,common.fontsm]}>Expire in {getTimeRemaining(item.created_date,item.time_duration)} min</Text>
+                      <Text style={[common.fontsm,{fontSize:10}]}>Delivery by {getDeliveryTime(item?.created_date,item.time_duration)}</Text>
                     </Button>
                   </View>
                 </Right>
@@ -377,15 +459,30 @@ const AgentHome = (props:Props) => {
               <View style={[theme.lightblue,]}>
               <ListItem avatar>
                 <Left>
-                  <Thumbnail
-                    source={{uri:item.requester_profile_image}}
-                    style={{width: 50, height: 50, borderRadius: 40}}
-                  />
+                 
+                  {
+                   
+                    (item?.requester_profile_image == undefined || item?.requester_profile_image == '')
+                    &&
+                    <Thumbnail
+                      source={require('../assets/images/no-photo.jpg')}
+                      style={{width: 50, height: 50, borderRadius: 40}}
+                    />
+                  }
+                  {
+                   
+                   item?.requester_profile_image != undefined && item?.requester_profile_image != ''
+                   &&
+                    <Thumbnail
+                      source={{uri:item?.requester_profile_image}}
+                      style={{width: 50, height: 50, borderRadius: 40}}
+                    />
+                  }
                 </Left>
                 <Body style={[common.bordernone]}>
-            <Text style={[common.colorblack, common.fontbody, common.fontbold]}>{item.requester_first_name} {item.requester_last_name}</Text>
-                <Text style={[common.colorblack, common.fontsm]}>600 Alexander Rd, NJ 58550</Text>
-                <Text style={[theme.fontbold,common.fontxs,theme.themecolor]}>Pickup - Today 10:00 AM</Text>
+            <Text style={[common.colorblack, common.fontbody, common.fontbold]}>{item?.requester_first_name} {item?.requester_last_name}</Text>
+                <Text style={[common.colorblack, common.fontsm]}>{item?.pickup_location}</Text>
+                {/* <Text style={[theme.fontbold,common.fontxs,theme.themecolor]}>Pickup - Today 10:00 AM</Text> */}
                 </Body>
                 <View>
                 <Button style={[theme.callbtn,common.mr15]} onPress={()=>Linking.openURL(`tel:${item?.requester_phone_prefix + item?.requester_phone}`)}>
@@ -399,21 +496,338 @@ const AgentHome = (props:Props) => {
               </ListItem>
     
             </View>
-                <View style={[common.flexbox,common.flexrow]}>
-                  <Button style={[theme.cancelbtn,common.center,common.w50]}>
-                    <Text style={[common.center,common.fontmd,common.fontbold]}>Cancel</Text>
-                  </Button>
+               
+                  {
+                    item?.status == 'requested'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      <Button style={[theme.cancelbtn,common.center,common.w50]} onPress={()=> cancelThisRequest(item,index)}>
+                      <Text style={[common.center,common.fontmd,common.fontbold]}>Cancel</Text>
+                    </Button>
                 
-                  <Button style={[theme.primarybtn,common.center,common.w50]} onPress={()=> acceptRequest(item)}>
-                    <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Accept</Text>
-                  </Button>
-                </View>
+                    <Button style={[theme.primarybtn,common.center,common.w50]} onPress={()=> acceptRequest(item)}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Accept</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'accepted'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"accepted",service:'money'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Start</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'started'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"started",service:'money'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Arrived</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'arrived'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> {props.navigation.navigate('AgentService',{data:item})}}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Collect OTP</Text>
+                    </Button>
+                  </View>
+                  }
               </View>
             </View>
             )
           })
         }
-      
+        {
+           laundlist != undefined && laundlist.length > 0 && laundlist.map((item,index)=>{
+            return(
+              <View style={[common.pl20, common.pr20,common.pt20,]} key={index}>
+          <View style={[common.whitebg, common.border]}>
+          <ListItem avatar >
+            <Left>
+              <Thumbnail
+                source={require('../assets/images/laundry_icon.png')}
+                style={{width: 35, height: 35, borderRadius: 40}}
+              />
+            </Left>
+            <Body style={[common.bordernone]}>
+            <Text style={[common.colorblack, common.fontbody, common.fontbold]}>#{item.unique_laundry_request_id}</Text>
+            <View style={[common.flexbox,common.flexrow,{alignItems: 'center',}]}>
+              <Text style={[theme.graytext, common.fontsm]}>Laundry Pickup</Text>
+              <Text style={[theme.colorblack, common.fontmd, common.fontbold]}> {item.normal_wash_weight} </Text>
+              <Text style={[theme.colorblack, common.fontsm]}>Pounds</Text>
+            </View>
+            </Body>
+            <View style={[common.pl15, common.pr15]}>
+            {/* <Text style={[theme.graytext, common.fontsm]}>1m</Text> */}
+            </View>
+          </ListItem>
+
+          <View style={[theme.lightblue,common.pb15]}>
+          <View style={[common.flexbox,common.flexrow,common.justifybetween,common.pl15,common.pt15,common.pr15]}>
+          <Text style={[common.fontxs, theme.fontbold, theme.graytext,]}>PICKUP</Text>
+          {/* <Text style={[common.fontxs, theme.fontbold, theme.colororange]}>2.2 miles</Text> */}
+          </View>
+          
+          {
+            item?.agent_request_type == "pickup"
+            &&
+            <View>
+            <ListItem avatar>
+            <Left>
+            {
+                   
+                   (item.requester_profile_image == undefined || item.requester_profile_image == '')
+                   &&
+                   <Thumbnail
+                     source={require('../assets/images/no-photo.jpg')}
+                     style={{width: 50, height: 50, borderRadius: 40}}
+                   />
+                 }
+                 {
+                  
+                  item.requester_profile_image != undefined && item.requester_profile_image != ''
+                  &&
+                   <Thumbnail
+                     source={{uri:item.requester_profile_image}}
+                     style={{width: 50, height: 50, borderRadius: 40}}
+                   />
+                 }
+            </Left>
+            <Body style={[common.bordernone]}>
+            <Text style={[common.colorblack, common.fontbody, common.fontbold]}>{item.requester_first_name} {item.requester_last_name}</Text>
+            <Text style={[common.colorblack, common.fontsm]}>{item.pickup_location}</Text>
+                <Text style={[theme.fontbold,common.fontxs,theme.themecolor]}>Pickup - Today {item.pickup_time}</Text>
+            </Body>
+            <View>
+            <Button style={[theme.callbtn,common.mr15]} onPress={()=>Linking.openURL(`tel:${item?.requester_phone_prefix + item?.requester_phone}`)}>
+                    <Icon
+                      name="call"
+                      type="MaterialIcons"
+                      style={[theme.white, common.fontlg, common.white]}
+                    />
+                </Button>
+            </View>
+          </ListItem>
+           <Text style={[common.fontxs, theme.fontbold, theme.graytext,common.pl15,common.pt15,common.pr15]}>DELIVERY</Text>
+           <ListItem avatar>
+             <Left>
+               <Thumbnail
+                 source={{uri:item.laundromat_data?.profile_image}}
+                 style={{width: 50, height: 50, borderRadius: 10}}
+               />
+             </Left>
+             <Body style={[common.bordernone]}>
+             <Text style={[common.colorblack, common.fontbody, common.fontbold]}>{item?.laundromat_data?.business_name} </Text>
+             <Text style={[common.colorblack, common.fontsm]}>{item?.laundromat_data?.location} </Text>
+             </Body>
+             <View>
+             <Button style={[theme.callbtn,common.mr15]} onPress={()=>Linking.openURL(`tel:${item?.laundromat_data?.phone_prefix + item?.laundromat_data?.phone}`)}>
+                     <Icon
+                       name="call"
+                       type="MaterialIcons"
+                       style={[theme.white, common.fontlg, common.white]}
+                     />
+                 </Button>
+             </View>
+           </ListItem>
+           </View>
+          }
+          {
+            item?.agent_request_type == "delivery"
+            &&
+            <View>
+            <ListItem avatar>
+             <Left>
+               <Thumbnail
+                 source={{uri:item.laundromat_data?.profile_image}}
+                 style={{width: 50, height: 50, borderRadius: 10}}
+               />
+             </Left>
+             <Body style={[common.bordernone]}>
+             <Text style={[common.colorblack, common.fontbody, common.fontbold]}>{item?.laundromat_data?.business_name} </Text>
+             <Text style={[common.colorblack, common.fontsm]}>{item?.laundromat_data?.location} </Text>
+             </Body>
+             <View>
+             <Button style={[theme.callbtn,common.mr15]} onPress={()=>Linking.openURL(`tel:${item?.laundromat_data?.phone_prefix + item?.laundromat_data?.phone}`)}>
+                     <Icon
+                       name="call"
+                       type="MaterialIcons"
+                       style={[theme.white, common.fontlg, common.white]}
+                     />
+                 </Button>
+             </View>
+           </ListItem>
+           <Text style={[common.fontxs, theme.fontbold, theme.graytext,common.pl15,common.pt15,common.pr15]}>DELIVERY</Text>
+            <ListItem avatar>
+            <Left>
+            {
+                   
+                   (item.requester_profile_image == undefined || item.requester_profile_image == '')
+                   &&
+                   <Thumbnail
+                     source={require('../assets/images/no-photo.jpg')}
+                     style={{width: 50, height: 50, borderRadius: 40}}
+                   />
+                 }
+                 {
+                  
+                  item.requester_profile_image != undefined && item.requester_profile_image != ''
+                  &&
+                   <Thumbnail
+                     source={{uri:item.requester_profile_image}}
+                     style={{width: 50, height: 50, borderRadius: 40}}
+                   />
+                 }
+            </Left>
+            <Body style={[common.bordernone]}>
+            <Text style={[common.colorblack, common.fontbody, common.fontbold]}>{item.requester_first_name} {item.requester_last_name}</Text>
+            <Text style={[common.colorblack, common.fontsm]}>{item.pickup_location}</Text>
+                <Text style={[theme.fontbold,common.fontxs,theme.themecolor]}>Pickup - Today {item.pickup_time}</Text>
+            </Body>
+            <View>
+            <Button style={[theme.callbtn,common.mr15]} onPress={()=>Linking.openURL(`tel:${item?.requester_phone_prefix + item?.requester_phone}`)}>
+                    <Icon
+                      name="call"
+                      type="MaterialIcons"
+                      style={[theme.white, common.fontlg, common.white]}
+                    />
+                </Button>
+            </View>
+          </ListItem>
+          
+           
+           </View>
+          }
+         
+        </View>
+           {
+            (item?.status == 'send_pickup' || item?.status == 'send_delivery')
+            &&
+            <View style={[common.flexbox,common.flexrow]}>
+              <Button style={[theme.cancelbtn,common.center,common.w50]} onPress={()=>cancelThisLaundryRequest(item,index)}>
+                <Text style={[common.center,common.fontmd,common.fontbold]}>Cancel</Text>
+              </Button>
+              <Button style={[theme.primarybtn,common.center,common.w50]} onPress={()=> acceptLaundryRequest(item)}>
+                <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Accept</Text>
+              </Button>
+            </View>
+           }
+           {
+                    item?.status == 'pickup_agent_accept'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"pickup_agent_accept",service:'laundry'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Start</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'pickup_agent_start'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"pickup_agent_start",service:'laundry'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Arrived</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'pickup_agent_arrived'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"pickup_agent_arrived",service:'laundry'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Collect</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'pickup_agent_collected'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"pickup_agent_collected",service:'laundry'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Deliver</Text>
+                    </Button>
+                  </View>
+                  }
+
+                  {
+                    item?.status == 'delivery_agent_accept'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"delivery_agent_accept",service:'laundry'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Start</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'delivery_agent_start'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"delivery_agent_start",service:'laundry'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Arrived</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'delivery_agent_arrived'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"delivery_agent_arrived",service:'laundry'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Collect</Text>
+                    </Button>
+                  </View>
+                  }
+                  {
+                    item?.status == 'delivery_agent_collected'
+                    &&
+                    <View style={[common.flexbox,common.flexrow]}>
+                      
+                
+                    <Button style={[theme.primarybtn,common.center,common.w100]} onPress={()=> props.navigation.navigate('AgentArrived',{data:item,lat:currentLatitude,lng:currentLongitude,status:"delivery_agent_collected",service:'laundry'})}>
+                      <Text style={[theme.white,common.center,common.fontmd,common.fontbold]}>Deliver</Text>
+                    </Button>
+                  </View>
+                  }
+                  
+                  
+          </View>
+        </View>
+            )
+           })
+        }
+
+        {
+          laundlist != undefined && laundlist.length == 0 && list != undefined && list.length == 0
+          &&
+          <View>
+            <Text style={{textAlign:"center",marginTop:40}}>No Requests to show</Text>
+          </View>
+        }
+     
         {/* <View style={[common.pl20, common.pr20,common.pt20,]}>
           <View style={[common.whitebg, common.border]}>
           <ListItem avatar >

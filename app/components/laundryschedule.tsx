@@ -36,7 +36,8 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
-import Geolocation from '@react-native-community/geolocation';
+//import Geolocation from '@react-native-community/geolocation';
+import GetLocation from 'react-native-get-location'
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { useDispatch, useSelector } from 'react-redux';
 import HeaderPage from './shared/header';
@@ -67,11 +68,7 @@ type Props = {
 };
 
 
-
-
-
- 
-
+//var watchId:any = null
 
 
 const LaundrySchedule = (props:Props) => {
@@ -89,76 +86,100 @@ const LaundrySchedule = (props:Props) => {
     const [currentLongitude,setCurrentLongitude] = useState(0);
     const [currentLatitude,setCurrentLatitude] = useState(0);
     const [locationStatus,setLocationStatus] = useState('');
+    const [error,setError] = useState("")
 
-const getOneTimeLocation = () => {
-    setLocationStatus('Getting Location ...');
-    Geolocation.getCurrentPosition(
-      //Will give you the current location
-      (position) => {
-        dispatch(getlaundro({laundromat_id:props.route.params.id}))
-        setLocationStatus('You are Here');
-         console.log("position",position)
-        //getting the Longitude from the location json
-        const currentLongitude = position.coords.longitude;
-
-        //getting the Latitude from the location json
-        const currentLatitude = position.coords.latitude;
-
-        //Setting Longitude state
-        setCurrentLongitude(currentLongitude);
+// const getOneTimeLocation = () => {
+    
+//     watchId =  Geolocation.watchPosition(
+//       pos => {
+//         setError("");
+//         console.log("coordinates",pos.coords)
+//         const currentLatitude = pos.coords.latitude;
+//         const currentLongitude = pos.coords.longitude;
+//         setCurrentLatitude(currentLatitude);
+//         setCurrentLongitude(currentLongitude);
+//         dispatch(getlaundro({laundromat_id:props.route.params.id}))
         
-        //Setting Longitude state
-        setCurrentLatitude(currentLatitude);
-      },
-      (error) => {
-        dispatch(getlaundro({laundromat_id:props.route.params.id}))
-        setLocationStatus(error.message);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 1000
-      },
-    );
-  };
+//       },
+//       e => {
+//         setError(e.message)
+//         dispatch(getlaundro({laundromat_id:props.route.params.id}))
+//       }
+//     );
+    
+//   };
 
   
 
     useEffect(()=>{
      
       dispatch(showLoader());
+      GetLocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 15000,
+        })
+        .then(location => {
+          setCurrentLatitude(location.latitude);
+          setCurrentLongitude(location.longitude);
+        
+        console.log(location);
       
-      
-      const requestLocationPermission = async () => {
-        if (Platform.OS === 'ios') {
-          getOneTimeLocation();
-         
-        } else {
-          try {
-            const granted = await PermissionsAndroid.request(
-              PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-              {
-                title: 'Location Access Required',
-                message: 'This App needs to Access your location',
-              },
-            );
-            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-              //To Check, If Permission is granted
-              getOneTimeLocation();
+            setRegion({latitude: location.latitude,
+              longitude: location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,})
             
-            } else {
-              setLocationStatus('Permission Denied');
-              dispatch(getlaundro({laundromat_id:props.route.params.id}))
-            }
-          } catch (err) {
+            fetch("https://maps.googleapis.com/maps/api/geocode/json?latlng=" + location.latitude + "," + location.longitude + "&key="+ appConfig.GoogleApiKey)
+            .then((response)=>response.json())
+            .then((response)=>{
+              
+            
+            setAddress(response?.results[0]?.formatted_address)
+            })
             dispatch(getlaundro({laundromat_id:props.route.params.id}))
-            console.warn(err);
-          }
-        }
-      };
-      requestLocationPermission();
+      })
+      .catch(error => {
+          const { code, message } = error;
+          console.warn(code, message);
+          dispatch(getlaundro({laundromat_id:props.route.params.id}))
+        
+      })
       
       
+      // const requestLocationPermission = async () => {
+      //   if (Platform.OS === 'ios') {
+      //     dispatch(showLoader());
+      //     getOneTimeLocation();
+         
+      //   } else {
+      //     try {
+      //       const granted = await PermissionsAndroid.request(
+      //         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      //         {
+      //           title: 'Location Access Required',
+      //           message: 'This App needs to Access your location',
+      //         },
+      //       );
+      //       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      //         //To Check, If Permission is granted
+      //         dispatch(showLoader());
+      //         getOneTimeLocation();
+            
+      //       } else {
+      //         setLocationStatus('Permission Denied');
+      //         dispatch(showLoader());
+      //         dispatch(getlaundro({laundromat_id:props.route.params.id}))
+      //       }
+      //     } catch (err) {
+      //       dispatch(showLoader());
+      //       dispatch(getlaundro({laundromat_id:props.route.params.id}))
+      //       console.warn(err);
+      //     }
+      //   }
+      // };
+      // requestLocationPermission();
+      
+     
 
       
     },[])
@@ -168,7 +189,7 @@ const getOneTimeLocation = () => {
     useEffect(()=>{
       if(laundro != undefined){
         dispatch(hideLoader());
-       
+       // Geolocation.clearWatch(watchId)
         if(laundro.status == true){
            setDetail(laundro.laundromat_data);
            if(laundro.last_used_address != undefined ){
@@ -330,7 +351,7 @@ const getOneTimeLocation = () => {
                         name="star"
                         type="FontAwesome"
                         style={[theme.coloryellow, common.fontxl]}></Icon>{' '}
-                      4.8
+                      {detail?.rating}
                     </Text>
                       </View>
                     </View>
@@ -367,8 +388,8 @@ const getOneTimeLocation = () => {
         </View>
         </View>
 
-        <View style={[theme.section_blue,]}>
-          <View style={[common.flexbox, common.flexrow, common.p20,common.borderbottom,,{borderBottomColor: '#00A1DC',}]}>
+        <View style={[theme.section_blue,{marginTop:-40}]}>
+          <View style={[common.flexbox, common.flexrow, common.p20,common.borderbottom,,{borderBottomColor: '#00A1DC'}]}>
             <View style={[common.flexone, common.pl10, common.pr10]}>
             <Text
             style={[

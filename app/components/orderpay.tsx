@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, {Component} from 'react';
+import React, {Component, useEffect, useState} from 'react';
 import {StatusBar, Image, TouchableOpacity, ScrollView} from 'react-native';
 import {
   Container,
@@ -31,47 +31,122 @@ import {
 import {theme} from '../css/theme';
 import {common} from '../css/common';
 import Timeline from 'react-native-timeline-flatlist';
+import Modal from 'react-native-modal';
+import io, { Socket } from 'socket.io-client';
 
-export default class OtderDetail extends Component {
-  constructor() {
-    super();
-    this.data = [
-      {title: 'Request Accepted  8:30 am'},
-      {title: 'Started 8:31 am'},
-      {title: 'Reached on your location'},
-    ];
+import {CommonActions} from '@react-navigation/native';
+import {showLoader, hideLoader} from '../actions/common/commonActions'
+import {appConfig} from '../appConfig'
+import { getOrderDetails,cancelMyRequest} from '../actions/moneyorder/moneyorderActions'
+import HeaderPage from './shared/header'
+import {useSelector, useDispatch} from 'react-redux'
+
+import {RootStackParamList} from '../RouteConfig'
+import {StackNavigationProp} from '@react-navigation/stack'
+import {RouteProp} from '@react-navigation/native'
+import {RootState} from '../appReducers'
+import CountryPicker, {DARK_THEME} from 'react-native-country-picker-modal'
+import moment from 'moment';
+
+
+import { TextInputMask } from 'react-native-masked-text'
+import AsyncStorage from '@react-native-community/async-storage';
+import Storage from 'react-native-storage';
+import { payMoney } from '../actions/moneyorder/moneyorderActions';
+var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
+
+type NotificationPageRouteProp = RouteProp<RootStackParamList, 'OrderPay'>
+
+type NotificationPageNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'OrderPay'
+>
+
+type Props = {
+  route: NotificationPageRouteProp
+  navigation: NotificationPageNavigationProp
+}
+
+const OrderPay = (props:Props) => {
+
+  const dispatch = useDispatch()
+
+  const [data,setData] = useState(props?.route?.params?.data);
+ 
+  const [status,setStatus] = useState([]);
+
+  function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
   }
-  render() {
+
+   useEffect(()=>{
+      console.log("data",props?.route?.params?.data);
+      var track:any = []
+      props?.route?.params?.data?.tracking_information?.length>0 && props?.route?.params?.data?.tracking_information.map((item,index)=>{
+        let format_time = moment(item.recorded_datetime).format('lll')
+       track.push({title: capitalizeFirstLetter(item.event) + ' - ' + format_time})
+      })
+      setStatus(track);
+
+   },[])
+
+   const payMyAgent = () =>{
+      dispatch(showLoader())
+      dispatch(payMoney({unique_money_request_id:data?.unique_id,order_status : "delivered"}))
+   }
+
+   const paid = useSelector((state:RootState)=>state.morder_r._payAgent) 
+
+   useEffect(()=>{
+     if(paid != undefined){
+       dispatch(hideLoader())
+       if(paid.status == true){
+         props.navigation.navigate('RatingPage',{data:data})
+        appConfig.functions.successMsg(paid.message)
+       }else{
+         appConfig.functions.showError(paid.message)
+       }
+     }
+   })
+   
+   const addZeroes = (num) => {
+    const dec = num?.split('.')[1]
+    const len = dec && dec?.length > 2 ? dec?.length : 2
+    return Number(num).toFixed(len)
+  }
+ 
     return (
       <Container style={[theme.bgblue]}>
+        <View style={{marginTop:20}}>
         <StatusBar barStyle="dark-content" />
         <Header
           androidStatusBarColor="#00AFEF"
           iosBarStyle="dark-content"
           style={[theme.bgblue]}>
           <Left>
-            <Button transparent>
+            <Button transparent onPress={()=>props.navigation.navigate('HomePage')}>
               <Icon
-                name="menu"
-                type="MaterialIcons"
+                name="chevron-small-left"
+                type="Entypo"
                 style={[theme.colorblack, common.fontxxl]}
               />
             </Button>
           </Left>
           <Body />
           <Right>
-            <Button transparent onPress={this.toggleModal}>
+            {/* <Button transparent >
               <Icon
                 name="closecircleo"
                 type="AntDesign"
                 style={[theme.colorblack, common.fontlg]}
               />
-            </Button>
+            </Button> */}
           </Right>
         </Header>
+        </View>
         <ScrollView style={[theme.bgblue]}>
           <View style={common.p20}>
-            <Text style={[common.white, common.fontlg]}>#12356</Text>
+            <Text style={[common.white, common.fontlg]}>#{data?.unique_id}</Text>
             <Text style={[common.white]}>Please see the request details</Text>
           </View>
 
@@ -93,7 +168,7 @@ export default class OtderDetail extends Component {
                   common.textcenter,
                   theme.colorblack,
                 ]}>
-                $400
+                ${addZeroes(JSON.stringify(data?.original_amount))}
               </Text>
               <View
                 style={[
@@ -108,7 +183,7 @@ export default class OtderDetail extends Component {
                   </Text>
                 </View>
                 <View style={[common.flexone]}>
-                  <Text style={[common.fontbody, theme.fontbold]}>$2.50</Text>
+                  <Text style={[common.fontbody, theme.fontbold]}>${addZeroes(JSON.stringify(data?.service_charge))}</Text>
                 </View>
               </View>
               <View
@@ -124,7 +199,7 @@ export default class OtderDetail extends Component {
                   </Text>
                 </View>
                 <View style={[common.flexone]}>
-                  <Text style={[common.fontbody, theme.fontbold]}>$5.50</Text>
+                  <Text style={[common.fontbody, theme.fontbold]}>${addZeroes(JSON.stringify(data?.delivery_charge))}</Text>
                 </View>
               </View>
               <View
@@ -140,7 +215,7 @@ export default class OtderDetail extends Component {
                   </Text>
                 </View>
                 <View style={[common.flexone]}>
-                  <Text style={[common.fontbody, theme.fontbold]}>$4.50</Text>
+                  <Text style={[common.fontbody, theme.fontbold]}>${addZeroes(JSON.stringify(data?.stripe_transaction_charge))}</Text>
                 </View>
               </View>
             </View>
@@ -159,7 +234,7 @@ export default class OtderDetail extends Component {
                 </Text>
               </View>
               <View style={[common.flexone]}>
-                <Text style={[common.fontlg, theme.fontbold]}>$4.50</Text>
+                <Text style={[common.fontlg, theme.fontbold]}>${addZeroes(JSON.stringify(data?.final_amount))}</Text>
               </View>
             </View>
             <View
@@ -190,12 +265,12 @@ export default class OtderDetail extends Component {
                   common.flexrow,
                   common.aligncenter,
                 ]}>
-                <Text style={[common.fontbody]}>XXXX2354</Text>
+                <Text style={[common.fontbody]}>XXXX{data?.payment_data?.card?.last4}</Text>
               </View>
             </View>
             <View style={[theme.footercard]}>
               <View style={[common.flexbox, common.flexrow, common.center]}>
-                <Text style={[theme.otpbox, theme.fontbold]}>OTP 145</Text>
+                <Text style={[theme.otpbox, theme.fontbold]}>OTP {data?.delivery_otp}</Text>
                 <Text>
                   <Icon
                     style={[theme.colororange]}
@@ -209,11 +284,12 @@ export default class OtderDetail extends Component {
                   rounded
                   danger
                   style={[theme.bgblue, {height: 60}, common.pr20, common.pl20]}
-                  onPress={this.toggleModal}>
+                  onPress={()=>{payMyAgent()}}
+                 >
                   <Text style={[common.fontlg, theme.textcapital]}>
                     Pay{' '}
                     <Text style={[common.white, theme.fontbold, common.fontlg]}>
-                      $412.00
+                      ${addZeroes(JSON.stringify(data?.final_amount))}
                     </Text>
                   </Text>
                 </Button>
@@ -225,22 +301,36 @@ export default class OtderDetail extends Component {
             <View style={(common.pt20, common.mt20)}>
               <ListItem avatar>
                 <Left>
-                  <Thumbnail
-                    source={require('../assets/images/thumbuser.png')}
-                    style={{width: 80, height: 80, borderRadius: 40}}
-                  />
+                {
+                   
+                   (data?.agent_data?.profile_image == undefined || data?.agent_data?.profile_image == '')
+                   &&
+                   <Thumbnail
+                     source={require('../assets/images/no-photo.jpg')}
+                     style={{width: 80, height: 80, borderRadius: 40}}
+                   />
+                 }
+                 {
+                  
+                  data?.agent_data?.profile_image != undefined && data?.agent_data?.profile_image != ''
+                  &&
+                   <Thumbnail
+                     source={{uri:data?.agent_data?.profile_image}}
+                     style={{width: 80, height: 80, borderRadius: 40}}
+                   />
+                 }
                 </Left>
                 <Body style={[common.bordernone]}>
                   <Text style={[common.fontlg, theme.fontbold]}>
-                    James Johnson
+                    {data?.agent_data?.first_name} {data?.agent_data?.last_name}
                   </Text>
-                  <Text note>West Windsor</Text>
+                  {/* <Text note>{data?.agent_data?.location}</Text> */}
                   <Text style={[theme.colorblack]}>
                     <Icon
                       name="star"
                       type="FontAwesome"
                       style={[theme.coloryellow, common.fontxl]}></Icon>{' '}
-                    4.8
+                    {data?.agent_data?.rating}
                   </Text>
                 </Body>
               </ListItem>
@@ -250,12 +340,12 @@ export default class OtderDetail extends Component {
               <ListItem style={[common.bordernone]}>
                 <Body style={[common.bordernone]}>
                   <Text style={[common.fontmd, theme.fontbold]}>
-                    Ford Fusion - Blue
+                    {data?.agent_data?.vehicle_model} - {data?.agent_data?.vehicle_color}
                   </Text>
-                  <Text note>EBF9211 -</Text>
+                  <Text note>{data?.agent_data?.vehicle_number}</Text>
                 </Body>
                 <Right>
-                  <Button rounded light style={[theme.btncall]}>
+                  <Button rounded light style={[theme.btncall]} onPress={()=>Linking.openURL(`tel:${data?.agent_data?.phone_prefix + data?.agent_data?.phone}`)}>
                     <Icon
                       name="call"
                       type="MaterialIcons"
@@ -271,13 +361,16 @@ export default class OtderDetail extends Component {
                   TRACKING
                 </Text>
               </View>
-              <View style={[common.p15, {height: 140}]}>
+              <View style={[common.p15, ]}>
                 <Timeline
-                  data={this.data}
+                  data={status}
                   showTime={false}
+                  circleSize={12}
+                  lineWidth={1}
                   circleColor={'#00AFEF'}
                   lineColor={'#00AFEF'}
-                  titleStyle={{marginTop: -10, paddingBottom: 10}}
+                  titleStyle={{marginTop: -10, paddingBottom: 10,fontSize:14,fontWeight:'500'}}
+                  style={[common.fontbody]}
                 />
               </View>
             </View>
@@ -314,11 +407,11 @@ export default class OtderDetail extends Component {
                   <View style={[common.flexbox, common.flexrow]}>
                     <View style={[common.flexone]}>
                       <Text note>
-                        <Text>1:00 </Text> Hour
+                        <Text>{data?.time_duration} </Text> Hour
                       </Text>
                     </View>
                     <View>
-                      <Text style={[common.fontsm]}>Request posted 8:29</Text>
+                      <Text style={[common.fontsm]}>Request posted {data?.created_time}</Text>
                     </View>
                   </View>
                 </View>
@@ -351,7 +444,7 @@ export default class OtderDetail extends Component {
                     ]}>
                     Deliver to
                   </Text>
-                  <Text>600 Alexander Rd, NJ 58550</Text>
+                  <Text>{data?.delivery_address}</Text>
                 </View>
               </View>
             </View>
@@ -359,5 +452,6 @@ export default class OtderDetail extends Component {
         </ScrollView>
       </Container>
     );
-  }
+  
 }
+ export default OrderPay

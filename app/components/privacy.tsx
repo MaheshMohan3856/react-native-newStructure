@@ -24,7 +24,7 @@ import {
   Picker,
   Icon,
 } from 'native-base';
-
+import {WebView} from 'react-native-webview'
 import {theme} from '../css/theme';
 import {common} from '../css/common';
 import {showLoader, hideLoader} from '../actions/common/commonActions';
@@ -65,22 +65,16 @@ const Policy = (props:Props) => {
         
        
         
-          <View style={[common.p20]}>
-            <View style={[common.mb20]}>
-              <Text
-                style={[theme.fontregular, common.fontxxl, theme.colorblack]}>
-                Privacy Policy
-              </Text>
-              <Text
-                style={[theme.fontregular, common.fontbody, theme.colorblack]}>
-                Coming Soon !
-              </Text>
-            </View>
-            <View>
-             
-            </View>
-          </View>
-       
+        <WebView
+                 
+                 source={{uri:appConfig.apiBaseUrl + "privacy" }}
+                 style={{
+                    display : "flex" ,
+                    flex : 1 ,
+                    minHeight : 150 
+                  }}
+               />
+           
        
         
       </Container>

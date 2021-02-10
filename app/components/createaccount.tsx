@@ -135,11 +135,14 @@ const validateForm = () => {
 
 
 useEffect(()=>{
+  messaging().requestPermission()
+  .then(() => {
   messaging()
     .getToken()
     .then(token => {
       setDeviceToken(token)
     });
+  })
   return () => {
     dispatch(_signup(undefined))
   }

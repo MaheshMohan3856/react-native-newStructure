@@ -68,7 +68,7 @@ export const _profileEditted = (result:object) =>{
 export const getAgentProfile = () => {
     return (dispatch, getState) => {       
   
-        return apiCall('users/get_agent_profile', true, 'POST', {})
+        return apiCall('agent/get_agent_profile', true, 'POST', {})
         .then((result) => {           
             dispatch(_agentProfile(result));            
         })
@@ -86,7 +86,7 @@ export const _agentProfile = (result:object) => {
 export const editAgent = (data:object) => {
     return (dispatch, getState) => {       
   
-        return apiCall('users/update_agent_profile', true, 'POST', data)
+        return apiCall('agent/update_agent_profile', true, 'POST', data)
         .then((result) => {           
             dispatch(_editAgent(result));            
         })

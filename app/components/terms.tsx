@@ -24,12 +24,12 @@ import {
   Picker,
   Icon,
 } from 'native-base';
-
+import {WebView} from 'react-native-webview'
 import {theme} from '../css/theme';
 import {common} from '../css/common';
 import {showLoader, hideLoader} from '../actions/common/commonActions';
 import {appConfig} from '../appConfig';
-import {forgotPass,_forgot} from '../actions/login/loginActions';
+import {getTerms} from '../actions/login/loginActions';
 import HeaderPage from './shared/header';
 import {useSelector,useDispatch} from 'react-redux';
 
@@ -53,9 +53,23 @@ type Props = {
 const Terms = (props:Props) => {
   const dispatch = useDispatch();
 
-  
+  // useEffect(()=>{
+  //    dispatch(showLoader())
+  //    dispatch(getTerms())
+  // },[])
 
-  
+  // const terms = useSelector((state:RootState)=>state.login_r._terms)
+
+  // useEffect(()=>{
+  //    if(terms != undefined){
+  //      dispatch(hideLoader())
+  //      if(terms.status == true){
+  //        console.log(terms)
+  //      }else{
+  //        appConfig.functions.showError(terms.message)
+  //      }
+  //    }
+  // },[terms])
 
   
   
@@ -65,21 +79,20 @@ const Terms = (props:Props) => {
         
        
         
-          <View style={[common.p20]}>
-            <View style={[common.mb20]}>
-              <Text
-                style={[theme.fontregular, common.fontxxl, theme.colorblack]}>
-                Terms Of Use
-              </Text>
-              <Text
-                style={[theme.fontregular, common.fontbody, theme.colorblack]}>
-                Coming Soon !
-              </Text>
-            </View>
-            <View>
+          
+          <WebView
+                 
+                 source={{uri:appConfig.apiBaseUrl + "terms_and_conditions" }}
+                 style={{
+                    display : "flex" ,
+                    flex : 1 ,
+                    minHeight : 150 
+                  }}
+               />
+           
              
-            </View>
-          </View>
+           
+         
        
        
         

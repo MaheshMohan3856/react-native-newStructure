@@ -7,7 +7,7 @@
  */
 
 import React, {Component, useEffect, useState} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView} from 'react-native';
+import {StatusBar, Image, TouchableOpacity, ScrollView, Platform} from 'react-native';
 import {
   Container,
   View,
@@ -80,6 +80,7 @@ const ConfirmMoney = (props:Props) => {
   const [labelViewOptions,setLableViewOptions] = useState<Array<any>>([])
   const [cardToken,setCardToken] = useState(props?.route?.params?.data?.cards[0]?.id)
   const [lastFour,setLastFour] = useState(props?.route?.params?.data?.cards[0]?.last4)
+  const [cardIndex,setCardIndex] = useState(0)
 
   const toggleModal = () =>{
     setIsModalVisible(!isModalVisible);
@@ -124,6 +125,7 @@ const ConfirmMoney = (props:Props) => {
 
 
  const setCardValue = (id) =>{
+  setCardIndex(id);
    setCardToken(props?.route?.params?.data?.cards[id]?.id);
    setLastFour(props?.route?.params?.data?.cards[id]?.last4);
  }
@@ -144,7 +146,7 @@ const ConfirmMoney = (props:Props) => {
 
  
 
- 
+   dispatch(showLoader());
 
   var agentIdArr:Array<any> = [];
   
@@ -152,7 +154,7 @@ const ConfirmMoney = (props:Props) => {
   const GeoFirestore = geofirestore.initializeApp(firestore);
   const geocollection = GeoFirestore.collection('Users');
  
-  const query = geocollection.near({ center:new firebase.firestore.GeoPoint(data?.pickup_latitude, data?.pickup_longitude), radius: 5 });
+  const query = geocollection.near({ center:new firebase.firestore.GeoPoint(data?.pickup_latitude, data?.pickup_longitude), radius: 5000 });
 
   query.get().then((value) => {
     // All GeoDocument returned by GeoQuery, like the GeoDocument added above
@@ -165,7 +167,7 @@ const ConfirmMoney = (props:Props) => {
     console.log("agentIdArr",agentIdArr);
     data.agent_list = agentIdArr
 
-    dispatch(showLoader());
+    
     dispatch(confirmMoney(data))
     
   })
@@ -320,10 +322,30 @@ const ConfirmMoney = (props:Props) => {
                   common.flexrow,
                   common.aligncenter,
                 ]}>
-                <Text style={[common.fontbody]}>XXXX{lastFour}</Text>
+                  {
+                    Platform.OS === 'ios'
+                    &&
+                    <Text style={[common.fontbody,{fontSize:12}]}>XXXX{lastFour}</Text>
+                  }
+                  {
+                    Platform.OS === 'ios'
+                    &&
+                <Button rounded small style={[theme.btn_small]} onPress={()=>setIsModalVisible(!isModalVisible)}>
+                  <Text style={[theme.textcapital,{fontSize:10}]}>change</Text>
+                </Button>
+                }
+                {
+                    Platform.OS === 'android'
+                    &&
+                    <Text style={[common.fontbody]}>XXXX{lastFour}</Text>
+                  }
+                  {
+                    Platform.OS === 'android'
+                    &&
                 <Button rounded small style={[theme.btn_small]} onPress={()=>setIsModalVisible(!isModalVisible)}>
                   <Text style={[theme.textcapital]}>change</Text>
                 </Button>
+                }
               </View>
             </View>
             <View style={[theme.footercard]}>
@@ -356,7 +378,7 @@ const ConfirmMoney = (props:Props) => {
                     Time Duration
                   </Text>
                   <Text note>
-                    <Text>{props?.route?.params?.data?.time_duration}:00 </Text> Hour
+                    <Text>{props?.route?.params?.data?.time_duration} </Text> Hour
                   </Text>
                 </View>
               </View>
@@ -421,8 +443,8 @@ const ConfirmMoney = (props:Props) => {
               <View>
                 <RadioGroup
                   options={labelViewOptions}
-                  onChange={(option) => {setSelectedOption(option);setCardValue(option.id)}}
-                  activeButtonId={0}
+                  onChange={(option) => {;setSelectedOption(option);setCardValue(option.id)}}
+                  activeButtonId={cardIndex}
                   circleStyle={{
                     width: 20,
                     height:20,

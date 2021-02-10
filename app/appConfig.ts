@@ -10,9 +10,9 @@ export const appConfig = {
 
  
 
- apiBaseUrl:'http://newagesme.com:3011/',
+ apiBaseUrl:'http://18.221.171.132:3011/',
  
-
+ apiSocketBaseUrl:'http://18.221.171.132:3011',
 
    
    

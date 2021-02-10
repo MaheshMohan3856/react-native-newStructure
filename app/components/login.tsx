@@ -71,11 +71,15 @@ const LoginPage = (props:Props) => {
   const [deviceToken,setDeviceToken] = useState('')
 
   useEffect(()=>{
+    messaging().requestPermission()
+    .then(() => {
     messaging()
       .getToken()
       .then(token => {
         setDeviceToken(token)
       });
+    })
+    
     return () => {
       dispatch(_login(undefined))
     }

@@ -203,7 +203,21 @@ const AgentRegister = (props:Props) => {
         appConfig.functions.successMsg(register.message)
         dispatch(agentReg({registered:true}))
         dispatch(_agentRegister(undefined))
-        props.navigation.navigate('AddBankACPage');
+   // props.navigation.navigate('AddBankACPage');
+      props.navigation.dispatch(
+        CommonActions.reset({
+          index: 1,
+          routes: [
+            {name:'HomePage'},
+            { name: 'AddBankACPage' },
+            
+          ],
+        })
+      );
+        // props.navigation.dispatch(
+        //   StackActions.replace('AddBankACPage', {})
+          
+        // );
        
         
        }else{
@@ -245,6 +259,7 @@ const AgentRegister = (props:Props) => {
                     ref={moneyRef}
                     onSubmitEditing={()=>{licenceRef._root.focus()}}
                     returnKeyType="next"
+                    keyboardType={"numeric"}
                   />
                   
                 </Item>

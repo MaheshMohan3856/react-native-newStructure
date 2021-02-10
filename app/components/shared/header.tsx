@@ -16,6 +16,7 @@ import {theme} from '../../css/theme';
 import {common} from '../../css/common';
 import firestore from '@react-native-firebase/firestore';
 import {withNavigation} from '@react-navigation/compat';
+import {StackActions,CommonActions} from '@react-navigation/native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import {appConfig} from '../../appConfig';
 import {switchover,_switchover} from '../../actions/agentregister/agentregisterActions';
@@ -34,11 +35,13 @@ type Props = {back:boolean,title:string,navigation:any,right:string,isAgent:Bool
  const HeaderPage = (props:Props) => {
 
    const dispatch = useDispatch()
- 
+
+
+  
 
   const userSwitchTo = (to:string) =>{
       
-      
+        
         dispatch(showLoader())
         dispatch(switchover({to:to}))
        
@@ -48,14 +51,30 @@ type Props = {back:boolean,title:string,navigation:any,right:string,isAgent:Bool
 
   useEffect(()=>{
         if(switched != undefined){
+          
           dispatch(hideLoader());
           
           if(switched.status == true){
             console.log("switched",switched)
+            dispatch(_switchover(undefined));
             if(switched.switch_to == 'user'){
+             AsyncStorage.setItem('home','user')
+             
+             props.navigation.dispatch(
+              CommonActions.reset({
+                index: 1,
+                routes: [
+                  { name: 'HomePage' },
+                  
+                ],
+              })
+            );
+            // props.navigation.dispatch(
+            //   StackActions.replace('HomePage', {})
+              
+            // );
+           // props.navigation.navigate('HomePage')
 
-              console.log("here")
-              props.navigation.navigate('HomePage')
               storage.load({key:"userData"}).then((ret)=>{
                 firestore()
                 .collection('Users')
@@ -66,23 +85,33 @@ type Props = {back:boolean,title:string,navigation:any,right:string,isAgent:Bool
                 });
               })
             }else{
+              AsyncStorage.setItem('home','agent')
               storage.load({key:"userData"}).then((ret)=>{
                 ret.uuid = switched?.agent_data?.unique_agent_id
                 storage.save({key:"userData",data:ret,expires:null});
               })
-              console.log("there")
-              props.navigation.navigate('AgentHome')
+              
+              props.navigation.dispatch(
+                CommonActions.reset({
+                  index: 1,
+                  routes: [
+                    { name: 'AgentHome' },
+                    
+                  ],
+                })
+              );
+             // props.navigation.navigate('AgentHome')
               
               
             }
             appConfig.functions.successMsg(switched.message);
             
-            setTimeout(()=>{
-              dispatch(_switchover(undefined));
-            },3000)
+           
+              
+           
           }else{
            
-            if(switched.agent_data.is_banking_information_complete == 'Y'){
+            if(switched?.agent_data?.is_banking_information_complete == 'Y'){
               appConfig.functions.showError(switched.message);
             }else{
               appConfig.functions.showError(switched.message);

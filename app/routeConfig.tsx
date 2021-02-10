@@ -34,6 +34,16 @@ import AgentHome from './components/agenthome';
 import AgentArrived from './components/agentarrived';
 import AgentService from './components/agentservice';
 import AgentSummary from './components/agentsummary';
+import TrackStatus from './components/trackstatus';
+import LaundryInvoice from './components/laundryinvoice';
+import AgentLaundryOtp from './components/agentlaundryotp';
+import OrderPay from './components/orderpay';
+import AgentHistory from './components/agenthistory';
+import UserHistory from './components/userhistory';
+import RatingPage from './components/rating';
+import LaundryRating from './components/laundryRating';
+import LaundryHistoryDetail from './components/laundryhistorydetail';
+import MoneyHistoryDetail from './components/moneyhistorydetail';
 
 export type RootStackParamList = {
 
@@ -66,11 +76,38 @@ export type RootStackParamList = {
   ConfirmMoney:{data:object,pricing:object},
   AddNewBank:{account_id:String},
   AgentHome:undefined,
-  AgentArrived:{data:Object,lat:Number,lng:Number},
+  AgentArrived:{data:Object,lat:Number,lng:Number,status:String,service:String},
   AgentService:{data:Object},
-  AgentSummary:undefined
-  
+  AgentSummary:{request_id:String},
+  TrackStatus:{unique_request_id:String,token:String,refreshToken:String},
+  LaundryInvoice:{unique_request_id:String,token:String,refreshToken:String}
+  AgentLaundryOtp:{data:Object},
+  OrderPay:{data:Object},
+  AgentHistory:undefined,
+  UserHistory:undefined,
+  RatingPage:{data:Object},
+  LaundryRating:{data:Object},
+  LaundryHistoryDetail:{unique_request_id:String}
+  MoneyHistoryDetail:{unique_request_id:String,page:String}
 };
+
+const AgentsDrawer = createDrawerNavigator<RootStackParamList>();
+const AgentMyDrawer = () => {
+   return(
+    <AgentsDrawer.Navigator initialRouteName="AgentHome" 
+  
+    drawerContentOptions={{activeBackgroundColor:"#f00"}}
+     
+     drawerContent={(props)=><AgentDrawer {...props}/>}>
+       <AgentsDrawer.Screen name="AgentHome" component={AgentHome} />
+       <AgentsDrawer.Screen name="Settings" component={Settings} />
+       <AgentsDrawer.Screen name="AgentBecome" component={AgentBecome} />
+       <AgentsDrawer.Screen name="PaymentCards" component={PaymentCards} />
+       <AgentsDrawer.Screen name="AgentHistory" component={AgentHistory} />
+       
+    </AgentsDrawer.Navigator>
+   )
+}
 
 
 
@@ -86,7 +123,7 @@ const MyDrawer = () => {
        <Drawer.Screen name="Settings" component={Settings} />
        <Drawer.Screen name="AgentBecome" component={AgentBecome} />
        <Drawer.Screen name="PaymentCards" component={PaymentCards} />
-       <Drawer.Screen name="AgentHome" component={AgentHome} />
+       <Drawer.Screen name="UserHistory" component={UserHistory} /> 
     </Drawer.Navigator>
    )
 }
@@ -138,6 +175,7 @@ const AppNavigator = () => {
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
       <Stack.Screen name="HomePage" component={MyDrawer} />
+      <Stack.Screen name="AgentHome" component={AgentMyDrawer} />
       <Stack.Screen name="Terms" component={Terms} />
       <Stack.Screen name="Privacy" component={Privacy} />
       <Stack.Screen name="AgentRegister" component={AgentRegister} />
@@ -157,6 +195,14 @@ const AppNavigator = () => {
       <Stack.Screen name="AgentArrived" component={AgentArrived} />
       <Stack.Screen name="AgentService" component={AgentService} />
       <Stack.Screen name="AgentSummary" component={AgentSummary} />
+      <Stack.Screen name="TrackStatus" component={TrackStatus} />
+      <Stack.Screen name="LaundryInvoice" component={LaundryInvoice} />
+      <Stack.Screen name="AgentLaundryOtp" component={AgentLaundryOtp} />
+      <Stack.Screen name="OrderPay" component={OrderPay} />
+      <Stack.Screen name="RatingPage" component={RatingPage} />
+      <Stack.Screen name="LaundryRating" component={LaundryRating} />
+      <Stack.Screen name="LaundryHistoryDetail" component={LaundryHistoryDetail} />
+      <Stack.Screen name="MoneyHistoryDetail" component={MoneyHistoryDetail} />
     </Stack.Navigator>
   )
 }

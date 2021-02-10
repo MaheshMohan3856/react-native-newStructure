@@ -133,7 +133,7 @@ const AddCard = (props: Props) => {
         dispatch(createCardToken({token:token.tokenId}));
       }
       catch(err){
-        dispatch(hideLoader)
+        dispatch(hideLoader())
         appConfig.functions.showError("Incorrect Card Details");
       }
 

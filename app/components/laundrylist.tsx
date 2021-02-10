@@ -33,7 +33,8 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
-import Geolocation from '@react-native-community/geolocation';
+//import Geolocation from '@react-native-community/geolocation';
+import GetLocation from 'react-native-get-location'
 import {lightblue} from 'color-name';
 import HeaderPage from './shared/header';
 import { RootStackParamList } from '../RouteConfig';
@@ -60,10 +61,12 @@ type Props = {
     navigation: NotificationPageNavigationProp;
 };
 
+//var watchId:any = null
+
 const LaundryList = (props:Props) => {
 
   const dispatch = useDispatch()
-
+ const [error,setError] = useState('')
   const [list,setList] = useState([])
   const [searchKey,setSearchKey] = useState('')
 
@@ -76,71 +79,81 @@ const LaundryList = (props:Props) => {
     dispatch(getLaundryList({search_key:search}))
   }
 
-  const getOneTimeLocation = () => {
-    setLocationStatus('Getting Location ...');
-    Geolocation.getCurrentPosition(
-      //Will give you the current location
-      (position) => {
-        setLocationStatus('You are Here');
-         console.log("position",position)
-        //getting the Longitude from the location json
-        const currentLongitude = position.coords.longitude;
-
-        //getting the Latitude from the location json
-        const currentLatitude = position.coords.latitude;
-
-        //Setting Longitude state
-        setCurrentLongitude(currentLongitude);
+  // const getOneTimeLocation = () => {
+    
+    
+  //   watchId =  Geolocation.watchPosition(
+  //     pos => {
+  //       setError("");
+  //       console.log("coordinates",pos.coords)
+  //       const currentLatitude = pos.coords.latitude;
+  //       const currentLongitude = pos.coords.longitude;
+  //       setCurrentLatitude(currentLatitude);
+  //       setCurrentLongitude(currentLongitude);
+  //       dispatch(getLaundryList({search_key:'',latitude:currentLatitude,longitude:currentLongitude}))
         
-        //Setting Longitude state
-        setCurrentLatitude(currentLatitude);
-       
-        dispatch(getLaundryList({search_key:'',latitude:currentLatitude,longitude:currentLongitude}))
-      },
-      (error) => {
-        setLocationStatus(error.message);
-      
-        dispatch(getLaundryList({search_key:''}))
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 1000
-      },
-    );
-  };
+  //     },
+  //     e => {
+  //       setError(e.message)
+  //       dispatch(getLaundryList({search_key:''}))
+  //     }
+  //   );
+
+  // };
 
 
   useEffect(()=>{
+
     dispatch(showLoader())
-    const requestLocationPermission = async () => {
-      if (Platform.OS === 'ios') {
-        getOneTimeLocation();
+    GetLocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 15000,
+  })
+  .then(location => {
+    setCurrentLatitude(location.latitude);
+    setCurrentLongitude(location.longitude);
+    dispatch(getLaundryList({search_key:'',latitude:location.latitude,longitude:location.longitude}))
+    console.log(location);
+  })
+  .catch(error => {
+      const { code, message } = error;
+      console.warn(code, message);
+      dispatch(getLaundryList({search_key:''}))
+    
+  })
+    
+    // const requestLocationPermission = async () => {
+    //   if (Platform.OS === 'ios') {
+    //     dispatch(showLoader())
+    //     getOneTimeLocation();
        
-      } else {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            {
-              title: 'Location Access Required',
-              message: 'This App needs to Access your location',
-            },
-          );
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            //To Check, If Permission is granted
-            getOneTimeLocation();
+    //   } else {
+    //     try {
+    //       const granted = await PermissionsAndroid.request(
+    //         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    //         {
+    //           title: 'Location Access Required',
+    //           message: 'This App needs to Access your location',
+    //         },
+    //       );
+    //       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+    //         //To Check, If Permission is granted
+    //         dispatch(showLoader())
+    //         getOneTimeLocation();
           
-          } else {
-            setLocationStatus('Permission Denied');
-           
-            dispatch(getLaundryList({search_key:''}))
-          }
-        } catch (err) {
-          console.warn(err);
-        }
-      }
-    };
-    requestLocationPermission();
+    //       } else {
+    //         setLocationStatus('Permission Denied');
+    //         dispatch(showLoader())
+    //         dispatch(getLaundryList({search_key:''}))
+    //       }
+    //     } catch (err) {
+    //       console.warn(err);
+    //     }
+    //   }
+    // };
+    // requestLocationPermission();
+
+  
     
   },[])
 
@@ -149,6 +162,7 @@ const LaundryList = (props:Props) => {
   useEffect(()=>{
      if(laundryList != undefined){
        dispatch(hideLoader())
+     
        if(laundryList.status == true){
          setList(laundryList.laundromat_list);
        }else{
@@ -204,7 +218,7 @@ const LaundryList = (props:Props) => {
                               <Image
                                 source={require('../assets/images/star.png')}
                                 style={{width: 20, height: 20}}></Image>{' '}
-                              4.8
+                              {item.rating}
                             </Text>
                           </View>
                         </View>

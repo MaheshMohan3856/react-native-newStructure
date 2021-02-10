@@ -7,7 +7,7 @@
  */
 
 import React, {useState,useEffect} from 'react';
-import {StatusBar, Image, TouchableOpacity, ScrollView,} from 'react-native';
+import {StatusBar, Image, TouchableOpacity, ScrollView,Linking,KeyboardAvoidingView,Platform} from 'react-native';
 import {
   Container,
   View,
@@ -33,7 +33,7 @@ import {common} from '../css/common';
 import OTPInputView from '@twotalltotems/react-native-otp-input'
 import {showLoader, hideLoader} from '../actions/common/commonActions'
 import {appConfig} from '../appConfig'
-import { startRequest,arrivedRequest,sendCompletionOtp} from '../actions/accept/acceptActions'
+import { resendMoneyOtp,sendCompletionOtp} from '../actions/accept/acceptActions'
 import HeaderPage from './shared/header'
 import {useSelector, useDispatch} from 'react-redux'
 
@@ -47,6 +47,7 @@ import CountryPicker, {DARK_THEME} from 'react-native-country-picker-modal'
 import { TextInputMask } from 'react-native-masked-text'
 import AsyncStorage from '@react-native-community/async-storage';
 import Storage from 'react-native-storage';
+
 var storage = new Storage({size: 1000,storageBackend: AsyncStorage,defaultExpires: 1000 * 3600 * 24,enableCache: false});
 
 type NotificationPageRouteProp = RouteProp<RootStackParamList, 'AgentService'>
@@ -68,17 +69,20 @@ const AgentService = (props:Props) => {
   const [otp,setOtp] = useState('');
   const [data,setData] = useState(props?.route?.params?.data)
 
-  const sendOtp = () =>{
+  
+
+  const sendOtp = (otp) =>{
         dispatch(showLoader())
-        dispatch(sendCompletionOtp({otp:otp,unique_money_request_id: data.unique_money_request_id}))
+        dispatch(sendCompletionOtp({otp:otp,unique_money_request_id: data.unique_money_request_id,order_status: "delivered"}))
   }
 
   const completed = useSelector((state:RootState)=>state.accept_r._completeRequest)
 
   useEffect(()=>{
       if(completed != undefined){
+        dispatch(hideLoader())
         if(completed.status == true){
-            props.navigation.navigate('AgentSummary')
+            props.navigation.navigate('AgentSummary',{request_id:data.unique_money_request_id})
         }else{
           appConfig.functions.showError(completed.message)
         }
@@ -89,14 +93,34 @@ const AgentService = (props:Props) => {
    
     var endtime = new Date(starttime);
    
-    endtime.setHours( endtime.getHours() + parseInt(interval) );
-    var time = endtime.toLocaleTimeString();
-    console.log('endtime',endtime);
-    
-     
-    
+    var splittime = interval.split('.');
+  
+    endtime.setHours( endtime.getHours() + parseInt(splittime[0]) );
+    if(splittime[1] != undefined){
+      endtime.setMinutes(endtime.getMinutes() + 30)
+    }
+    var time = endtime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
     return time
   }
+
+  const resendOtp = () => {
+    dispatch(showLoader())
+    dispatch(resendMoneyOtp({"unique_money_request_id" : data.unique_money_request_id }))
+  }
+
+  const resended = useSelector((state:RootState)=>state.accept_r._moneyOtp)
+
+  useEffect(()=>{
+      if(resended != undefined){
+        dispatch(hideLoader())
+        if(resended.status == true){
+          appConfig.functions.successMsg(resended.message)
+        }else{
+          appConfig.functions.showError(resended.message)
+        }
+      }
+  },[resended])
   
     return (
       <Container style={[theme.primarybackground]}>
@@ -108,28 +132,41 @@ const AgentService = (props:Props) => {
 
           <Body />
           <Right>
-            <Button transparent onPress={this.toggleModal}>
+            {/* <Button transparent onPress={this.toggleModal}>
               <Icon
                 name="closecircleo"
                 type="AntDesign"
                 style={[common.red, common.fontxl]}
               />
-            </Button>
+            </Button> */}
           </Right>
         </Header>
+        <KeyboardAvoidingView behavior={Platform.OS == "ios" ? "padding" : "height"} style={{flex:1}}>
         <ScrollView>
         <View style={[common.borderbottom,]}>
           <View style={[common.whitebg,]}>
           <ListItem avatar style={[common.pt10,common.pb10,]}>
             <Left>
+            {
+                (data.requester_profile_image == undefined || data.requester_profile_image == '')
+                &&
+                <Thumbnail
+                     source={require('../assets/images/no-photo.jpg')}
+                     style={{width: 50, height: 50, borderRadius: 40}}
+                   />
+              }
+              {
+                (data.requester_profile_image != undefined && data.requester_profile_image != '')
+                &&
               <Thumbnail
                 source={{uri:data.requester_profile_image}}
                 style={{width: 50, height: 50, borderRadius: 40}}
               />
+             }
             </Left>
             <Body style={[common.bordernone]}>
             <Text style={[common.colorblack, common.fontlg, common.fontbold]}>{data.requester_first_name} {data.requester_last_name}</Text>
-            <Text style={[common.colorblack, common.fontsm]}>600 Alexander Rd, NJ 58550</Text>
+            <Text style={[common.colorblack, common.fontsm]}>{data.pickup_location}</Text>
             </Body>
             <View style={[common.pl15, common.pr15]}>
             <Button style={[theme.callbtn]} onPress={()=>Linking.openURL(`tel:${data?.requester_phone_prefix + data?.requester_phone}`)}>
@@ -144,15 +181,15 @@ const AgentService = (props:Props) => {
 
             <View style={[common.flexbox,common.flexrow,common.p15,theme.lightblue]}>
               <View style={[common.flexone]}>
-                <Text style={[common.center,common.fontbold,common.fontxl,common.colorblack]}>${data.original_amount}</Text>
+                <Text style={[common.center,common.fontbold,common.fontxl,common.colorblack]}>${data?.original_amount}</Text>
                 <Text style={[common.center,common.fontxs,common.colorblack]}>AMOUNT REQUESTED</Text>
               </View>
               <View style={[common.flexone,common.center]}>
               <View style={[common.flexbox,common.flexrow]}>
-              <Text style={[common.center,common.fontbold,common.fontlg,common.colorblack, common.mt8]}>{getDeliveryTime(data.created_date,data.time_duration)} </Text>
+              <Text style={[common.center,common.fontbold,common.fontlg,common.colorblack, common.mt8]}>{getDeliveryTime(data?.created_date,data?.time_duration)} </Text>
                 {/* <Text style={[common.center,common.fontbold,common.fontbody,common.colorblack,common.pt10]}>PM</Text> */}
               </View>
-                <Text style={[common.center,common.fontxs,common.colorblack]}>AMOUNT REQUESTED</Text>
+                <Text style={[common.center,common.fontxs,common.colorblack]}>DELIVER BEFORE</Text>
               </View>
             </View>
           </View>
@@ -197,13 +234,13 @@ const AgentService = (props:Props) => {
                  codeInputHighlightStyle={{ borderColor: "#F16436"}}
                  code={otp}
                  onCodeChanged={(otp)=>{setOtp(otp)}}
-                 onCodeFilled={()=>sendOtp()}
+                // onCodeFilled={()=>sendOtp()}
                 />
             
             </View>
                 </View>
                 <View style={[common.mb20,common.pb20,common.pt10]}>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={()=>resendOtp()}>
                     <Text
                       style={[
                         common.pt10,
@@ -226,6 +263,7 @@ const AgentService = (props:Props) => {
             </View>
           </View>
         </ScrollView>
+        </KeyboardAvoidingView>
       </Container>
     );
   }

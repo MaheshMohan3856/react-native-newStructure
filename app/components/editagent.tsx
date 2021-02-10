@@ -68,7 +68,7 @@ type Props = {
 const EditAgent = (props:Props) => {
   const dispatch = useDispatch();
 
-
+  const [moneyInHand,setMoneyInHand] = useState('')
   const [license, setLicense] = useState('');
   const [ssn, setSsn] = useState('');
   const [vehicle,setVehicle] = useState('');
@@ -113,6 +113,7 @@ useEffect(()=>{
     if(agentProfile != undefined){
        dispatch(hideLoader())
        if(agentProfile.status == true){
+           setMoneyInHand((agentProfile?.user_details?.moneyInHand).toString())
             setLicense(agentProfile?.user_details?.license_number)
             setSsn(agentProfile?.user_details?.ssn)
             setVehicle(agentProfile?.user_details?.vehicle_number)
@@ -218,7 +219,12 @@ useEffect(()=>{
     }else if(checkedMoney == false && checkedLaundry == false){
       appConfig.functions.showError('Atleast one of the service should be checked')
       return
-    }else{
+    }else if(checkedMoney == true && (moneyInHand == "" || moneyInHand == undefined )){
+      appConfig.functions.showError('Please add money in your hand')
+      return
+    }
+    else{
+        console.log("checkedMoney",checkedMoney,"moneyInHand",moneyInHand)
         let agent_type = ''
         var data = {}
         if(checkedMoney == true && checkedLaundry == true){
@@ -231,6 +237,7 @@ useEffect(()=>{
         
         dispatch(showLoader())
          data = {
+          moneyInHand:moneyInHand,
           agent_type:agent_type,
           license:license,
           ssn:ssn,
@@ -358,13 +365,27 @@ useEffect(()=>{
                   </View>
                   
                 </View>
+                {
+                  checkedMoney == true
+                  &&
+                  <View style={[{borderBottomWidth:.5,borderBottomColor:"lightgrey"}]}>
+                  <Label style={[common.textgray,common.mt10,common.fontmd]}>Money In Hand #</Label>
+                  <Input 
+                  value={moneyInHand}
+                   onChangeText={(mih)=>{setMoneyInHand(mih)}}
+                 // onSubmitEditing={()=>{licenceRef._root.focus()}}
+                  returnKeyType="next"
+                  />
+                </View>
+                }
+                
                 <View style={[{borderBottomWidth:.5,borderBottomColor:"lightgrey"}]}>
                   <Label style={[common.textgray,common.mt10,common.fontmd]}>License #</Label>
                   <Input 
                    value={license}
                    onChangeText={(license)=>{setLicense(license)}}
                    getRef={(c) => setLicenceRef(c)}
-                  onSubmitEditing={()=>{ssnRef._root.focus()}}
+                //  onSubmitEditing={()=>{ssnRef._root.focus()}}
                   returnKeyType="next"
                   />
                 </View>
@@ -374,7 +395,7 @@ useEffect(()=>{
                    value={ssn}
                    onChangeText={(ssn)=>{setSsn(ssn)}}
                    getRef={(c) => setSsnRef(c)}
-                  onSubmitEditing={()=>{vehicleRef._root.focus()}}
+                  //onSubmitEditing={()=>{vehicleRef._root.focus()}}
                   returnKeyType="next"
                   />
                </View>
@@ -386,7 +407,7 @@ useEffect(()=>{
                     value={vehicle}
                     onChangeText={(vehicle)=>{setVehicle(vehicle)}}
                     getRef={(c) => setVehicleRef(c)}
-                   onSubmitEditing={()=>{mandmRef._root.focus()}}
+                   //onSubmitEditing={()=>{mandmRef._root.focus()}}
                    returnKeyType="next"
                   />
                 </View>
@@ -396,7 +417,7 @@ useEffect(()=>{
                     value={mandm}
                     onChangeText={(mandm)=>{setMandm(mandm)}}
                     getRef={(c) => setMandmRef(c)}
-                   onSubmitEditing={()=>{colorRef._root.focus()}}
+                  // onSubmitEditing={()=>{colorRef._root.focus()}}
                    returnKeyType="next"
                   />
                 </View>

@@ -234,7 +234,7 @@ const LaundryDetail = (props:Props) => {
                           <Image
                             source={require('../assets/images/star.png')}
                             style={{width: 20, height: 20}}></Image>{' '}
-                          4.8
+                          {detail?.rating}
                         </Text>
                       </View>
                       <View>
@@ -277,7 +277,7 @@ const LaundryDetail = (props:Props) => {
             onDisplay={() => navTitleView.fadeOut(100)}>
             <View style={[common.p10, theme.bgblue, common.pt15, common.pb15]}>
               <Button rounded block style={[common.bgwhite]} onPress={validate}>
-                <Text style={[theme.bluecolor]}>Schedule Pickup</Text>
+                <Text style={[theme.bluecolor,{textTransform:"capitalize"}]}>Schedule Pickup</Text>
               </Button>
             </View>
             <View style={[common.bgwhite, common.pt10, common.pb10]}>

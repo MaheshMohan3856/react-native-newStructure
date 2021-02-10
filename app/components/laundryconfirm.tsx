@@ -8,11 +8,15 @@
 
 import React, {useState,useEffect} from 'react';
 import {
+  Platform,
+  Keyboard,
   StatusBar,
   Image,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback
 } from 'react-native';
 import {
   Container,
@@ -113,7 +117,7 @@ const LaundryConfirm = (props:Props) =>  {
             dispatch(_confirmPick(undefined))
           }
         }
-  })
+  },[confirm])
 
   const addZeroes = (num) => {
     const dec = num.split('.')[1]
@@ -124,7 +128,9 @@ const LaundryConfirm = (props:Props) =>  {
   return (
       <Container  style={[theme.bgblue]}>
         <HeaderPage back={true} title="" color="blue"/>
-<ScrollView>
+        <KeyboardAvoidingView behavior={Platform.OS == "ios" ? "padding" : "height"} style={{flex:1}}>
+        
+     <ScrollView>
         <View style={[common.p20]}>
           <Text style={[common.fontlg,common.white]}>Confirm your request</Text>
           <Text style={[common.fontsm,common.white]}>Please Confirm your pickup</Text>
@@ -158,7 +164,7 @@ const LaundryConfirm = (props:Props) =>  {
                         name="star"
                         type="FontAwesome"
                         style={[theme.coloryellow, common.fontxl]}></Icon>{' '}
-                      4.8
+                      {details?.laundromat_data?.rating}
                     </Text>
                       </View>
                     </View>
@@ -284,6 +290,8 @@ const LaundryConfirm = (props:Props) =>  {
                   </Button>
                 </View>
         </ScrollView>
+       
+        </KeyboardAvoidingView>
 
       </Container>
     );
