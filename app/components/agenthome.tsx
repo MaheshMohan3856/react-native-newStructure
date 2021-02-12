@@ -149,8 +149,6 @@ const AgentHome = (props:Props) => {
     
     const unsubscribe = props.navigation.addListener('focus', () => {
 
-
- 
       console.log("token",token);
       console.log("refreshToken",refreshToken);
    

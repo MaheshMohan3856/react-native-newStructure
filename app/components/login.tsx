@@ -27,6 +27,7 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
+import {saveToken} from '../actions/token/tokenActions';
 import messaging from '@react-native-firebase/messaging';
 import {CommonActions} from '@react-navigation/native';
 import {showLoader, hideLoader} from '../actions/common/commonActions';
@@ -133,27 +134,38 @@ const LoginPage = (props:Props) => {
  useEffect(()=>{
      console.log("loggedIn",loggedIn);
      if(loggedIn != undefined){
-      dispatch(hideLoader());
-  
+     
+      
       if(loggedIn.status == true){
+        appConfig.functions.isLoggedin()
+        .then((token)=>{
+              appConfig.functions.getRefresh()
+              .then((refreshtoken)=>{
+                dispatch(saveToken({token:token,refreshtoken:refreshtoken}))
+              })
+          })
         storage.save({
           key:"userData",
           data:loggedIn.user_details,
           expires: null
         });
-        if(loggedIn.user_details.verification_status == 'Y'){
-          props.navigation.dispatch(
-            CommonActions.reset({
-              index: 1,
-              routes: [
-                { name: 'HomePage' },
-                
-              ],
-            })
-          );
-        }else{
-          props.navigation.push('VerifyPhone',{page:'SignUp',phone:loggedIn?.user_details?.phone,code:loggedIn?.user_details?.phone_prefix,email:''})
-        }
+         setTimeout(()=>{
+          dispatch(hideLoader());
+          if(loggedIn.user_details.verification_status == 'Y'){
+            props.navigation.dispatch(
+              CommonActions.reset({
+                index: 1,
+                routes: [
+                  { name: 'HomePage' },
+                  
+                ],
+              })
+            );
+          }else{
+            props.navigation.push('VerifyPhone',{page:'SignUp',phone:loggedIn?.user_details?.phone,code:loggedIn?.user_details?.phone_prefix,email:''})
+          }
+        },1000)
+        
         
         
       }else{

@@ -33,6 +33,7 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {Picker} from '@react-native-picker/picker';
 import moment from 'moment';
 import {CommonActions} from '@react-navigation/native';
@@ -79,8 +80,16 @@ type Props = {
 
    const [llist,setLlist] = useState([])
    const [mlist,setMlist] = useState([])
-   const [filterArray,setFilterArray] = useState(["Asc","Desc"])
-   const [filter,setFilter] = useState("Desc")
+   const [dateFrom, setDateFrom] = useState(new Date(1598051730000));
+   const [dateTo, setDateTo] = useState(new Date(1598051730000));
+
+   const [minDate, setMinDate] = useState(new Date());
+
+   const [startDate, setStartDate] = useState('');
+   const [endDate, setEndDate] = useState('');
+
+  const [showFrom, setShowFrom] = useState(false);
+  const [showTo, setShowTo] = useState(false);
 
    const [isModalVisible,setIsModalVisible] = useState(false) 
 
@@ -95,8 +104,8 @@ type Props = {
       setLlist([]);
       setMlist([])
       dispatch(showLoader());
-      dispatch(getUserHistoryMoney({m_offset : 0,filter:filter}))
-      dispatch(getUserHistoryLaundry({l_offset : 0,filter:filter}))
+      dispatch(getUserHistoryMoney({m_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getUserHistoryLaundry({l_offset : 0,startDate:startDate,endDate:endDate}))
     })
     return unsubscribe;
   },[props.navigation])
@@ -105,7 +114,7 @@ type Props = {
     
     if(onScrollBeginMoney){
       
-      dispatch(getUserHistoryMoney({m_offset : mOffset+1,filter:filter}))
+      dispatch(getUserHistoryMoney({m_offset : mOffset+1,startDate:startDate,endDate:endDate}))
       setMOffset(mOffset+1)
     }
     
@@ -115,7 +124,7 @@ type Props = {
     
     if(onScrollBeginDrag){
       
-      dispatch(getUserHistoryLaundry({l_offset : lOffset+1,filter:filter}))
+      dispatch(getUserHistoryLaundry({l_offset : lOffset+1,startDate:startDate,endDate:endDate}))
       setLOffset(lOffset+1)
     }
     
@@ -158,6 +167,41 @@ type Props = {
       }
     }
   },[historyMoney])
+
+  const onChangeFrom = (event, selectedDate) => {
+    const currentDate = selectedDate || dateFrom;
+    setShowFrom(false);
+    setDateFrom(currentDate);
+    setMinDate(new Date(selectedDate))
+    setStartDate(moment(selectedDate).format('DD-MM-YYYY'))
+    if(endDate != ''){
+      setLOffset(0);
+      setMOffset(0);
+      setLlist([]);
+      setMlist([])
+      dispatch(showLoader());
+      dispatch(getUserHistoryMoney({m_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getUserHistoryLaundry({l_offset : 0,startDate:startDate,endDate:endDate}))
+     
+    }
+  }
+
+  const onChangeTo = (event, selectedDate) => {
+    const currentDate = selectedDate || dateTo;
+    setShowTo(false);
+    setDateTo(currentDate);
+    setEndDate(moment(selectedDate).format('DD-MM-YYYY'))
+    if(startDate != ''){
+      setLOffset(0);
+      setMOffset(0);
+      setLlist([]);
+      setMlist([])
+      dispatch(showLoader());
+      dispatch(getUserHistoryMoney({m_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getUserHistoryLaundry({l_offset : 0,startDate:startDate,endDate:endDate}))
+      
+    }
+  }
   
     return (
       <Container>
@@ -165,41 +209,52 @@ type Props = {
         <View style={[common.pl20, common.mt15, common.pb10]}>
           <Text style={[common.fontxxl]}>Your Requests</Text>
         </View>
-        <View style={[common.flexrow,common.pl20,{justifyContent:"flex-end"}]}>
+        <View style={[common.flexrow,common.pl20,{justifyContent:"flex-start",paddingBottom:10}]}>
           <Text style={{fontWeight:"bold"}}>Filter By Date:</Text>
-          {
-            Platform.OS === 'ios'
-            &&
-            <Text style={common.pr10} onPress={()=>toggleModal()}>{filter}</Text>
-          }
-          {
-            Platform.OS === 'android'
-            &&
-            <Picker
-            selectedValue={filter}
-            style={{height: 50, width: 100,marginTop:-14}}
-            onValueChange={(itemValue, itemIndex) =>{
-              setFilter(itemValue)
-              setLOffset(0);
-              setMOffset(0);
-              setLlist([]);
-              setMlist([])
-              dispatch(showLoader());
-              dispatch(getUserHistoryMoney({m_offset : 0,filter:itemValue}))
-              dispatch(getUserHistoryLaundry({l_offset : 0,filter:itemValue}))
-            }
-            }>
-            {filterArray?.length > 0 && filterArray?.map((item,index)=>{
-              return(
-                <Picker.Item key={index} label={item} value={item} />
-              )
-            })}
-           
-           
-          </Picker>
-          }
-       
+        
+         
         </View>
+        <View style={[common.flexrow,common.pl20,common.pr20,{justifyContent:"flex-end"}]}>
+            <Text style={common.pr10}>From:</Text>
+            {
+              startDate != ''
+              &&
+              <Text style={common.pr5} >{moment(startDate).format('DD-MM-YYYY')}</Text>
+            }
+            
+            <Text style={[common.pr5,{marginTop:-5}]} onPress={()=>setShowFrom(true)}><Icon name="calendar" type="Entypo"/></Text>
+              {showFrom && (
+                <DateTimePicker
+                  testID="dateTimePickerFrom"
+                  value={dateFrom}
+                  mode={"date"}
+                  is24Hour={true}
+                  display="default"
+                  maximumDate={new Date()}
+                  onChange={onChangeFrom}
+                />
+              )}
+              <Text style={common.pr10}>To:</Text>
+              {
+                endDate != ''
+                &&
+                <Text style={common.pr10} >{moment(endDate).format('DD-MM-YYYY')}</Text>
+              }
+              
+              <Text style={[{marginTop:-5}]} onPress={()=>setShowTo(true)}><Icon name="calendar" type="Entypo"/></Text>
+              {showTo && (
+                <DateTimePicker
+                  testID="dateTimePickerTo"
+                  value={dateTo}
+                  mode={"date"}
+                  is24Hour={true}
+                  maximumDate={new Date()}
+                  minimumDate={minDate}
+                  display="default"
+                  onChange={onChangeTo}
+                />
+              )}
+          </View>
         <Tabs tabBarUnderlineStyle={[{ backgroundColor:'#48c6f3',}]}
            tabContainerStyle={{elevation: 0}}
         >
@@ -346,36 +401,7 @@ type Props = {
         
           </Tab>
         </Tabs>
-        <Modal isVisible={isModalVisible}>
-          <View style={[common.flexbox]}>
-            <View style={[theme.boxmodel]}>
-            <Picker
-                  selectedValue={filter}
-                  style={{height: 150, width: '100%',marginTop:-30}}
-                  onValueChange={(itemValue, itemIndex) =>{
-                    toggleModal()
-                    setFilter(itemValue)
-                    setLOffset(0);
-                    setMOffset(0);
-                    setLlist([]);
-                    setMlist([])
-                    dispatch(showLoader());
-                    dispatch(getUserHistoryMoney({m_offset : 0,filter:itemValue}))
-                    dispatch(getUserHistoryLaundry({l_offset : 0,filter:itemValue}))
-                  }
-                  }>
-                  {filterArray?.length > 0 && filterArray?.map((item,index)=>{
-                    return(
-                      <Picker.Item key={index} label={item} value={item} />
-                    )
-                  })}
-                
-                
-                </Picker>
-            
-            </View>
-          </View>
-        </Modal>
+       
       </Container>
     );
   }

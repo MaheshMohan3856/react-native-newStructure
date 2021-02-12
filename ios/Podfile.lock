@@ -658,6 +658,8 @@ PODS:
     - React
   - RNCPicker (1.9.10):
     - React-Core
+  - RNDateTimePicker (3.0.9):
+    - React-Core
   - RNFBApp (8.4.0):
     - Firebase/CoreOnly (~> 6.30.0)
     - React
@@ -757,6 +759,7 @@ DEPENDENCIES:
   - "RNCClipboard (from `../node_modules/@react-native-community/clipboard`)"
   - "RNCMaskedView (from `../node_modules/@react-native-community/masked-view`)"
   - "RNCPicker (from `../node_modules/@react-native-picker/picker`)"
+  - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBFirestore (from `../node_modules/@react-native-firebase/firestore`)"
   - "RNFBMessaging (from `../node_modules/@react-native-firebase/messaging`)"
@@ -878,6 +881,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-community/masked-view"
   RNCPicker:
     :path: "../node_modules/@react-native-picker/picker"
+  RNDateTimePicker:
+    :path: "../node_modules/@react-native-community/datetimepicker"
   RNFBApp:
     :path: "../node_modules/@react-native-firebase/app"
   RNFBFirestore:
@@ -968,6 +973,7 @@ SPEC CHECKSUMS:
   RNCClipboard: 48eaf27bea3de7c9a265529725434268d47a2ee9
   RNCMaskedView: 5a8ec07677aa885546a0d98da336457e2bea557f
   RNCPicker: 77183d9b1cd80ae55505322f8ad09ba0036e29ba
+  RNDateTimePicker: 8a51a2216c307769e69ef827293d59549ab1ca23
   RNFBApp: 807094313ffdc79fc45c4cb14489c8b0ea23f935
   RNFBFirestore: 1dc3bbf9ca70352a77c58391c000d9996e8388a1
   RNFBMessaging: 688b2421b8bb1fcbe5f2ca25a649aac313bece41

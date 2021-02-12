@@ -32,6 +32,7 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Modal from 'react-native-modal'
 import {Picker} from '@react-native-picker/picker';
 import moment from 'moment';
@@ -78,8 +79,18 @@ type Props = {
    const [lOffset,setLOffset] = useState(0)
    const [mOffset,setMOffset] = useState(0)
    const [eOffset,setEOffset] = useState(0)
-   const [filterArray,setFilterArray] = useState(["Asc","Desc"])
-   const [filter,setFilter] = useState("Desc")
+ 
+
+   const [dateFrom, setDateFrom] = useState(new Date(1598051730000));
+   const [dateTo, setDateTo] = useState(new Date(1598051730000));
+
+   const [minDate, setMinDate] = useState(new Date());
+
+   const [startDate, setStartDate] = useState('');
+   const [endDate, setEndDate] = useState('');
+
+  const [showFrom, setShowFrom] = useState(false);
+  const [showTo, setShowTo] = useState(false);
 
    const [isModalVisible,setIsModalVisible] = useState(false) 
 
@@ -102,9 +113,9 @@ type Props = {
       setMlist([]);
       setElist([])
       dispatch(showLoader());
-      dispatch(getAgentHistoryMoney({m_offset : 0,filter:filter}))
-      dispatch(getAgentHistoryLaundry({l_offset : 0,filter:filter}))
-      dispatch(getAgentEarnings({e_offset : 0,filter:filter}))
+      dispatch(getAgentHistoryMoney({m_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getAgentHistoryLaundry({l_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getAgentEarnings({e_offset : 0,startDate:startDate,endDate:endDate}))
     })
     return unsubscribe;
   },[props.navigation])
@@ -113,7 +124,7 @@ type Props = {
     
     if(onScrollBeginDrag){
       
-      dispatch(getAgentHistoryMoney({m_offset : mOffset+1,filter:filter}))
+      dispatch(getAgentHistoryMoney({m_offset : mOffset+1,startDate:startDate,endDate:endDate}))
       setMOffset(mOffset+1)
      
     }
@@ -124,7 +135,7 @@ type Props = {
     
     if(onScrollBeginDragLaundry){
       
-      dispatch(getAgentHistoryLaundry({l_offset : lOffset+1,filter:filter}))
+      dispatch(getAgentHistoryLaundry({l_offset : lOffset+1,startDate:startDate,endDate:endDate}))
       setLOffset(lOffset+1)
     }
     
@@ -134,7 +145,7 @@ type Props = {
     
     if(onScrollBeginEarning){
       
-      dispatch(getAgentEarnings({e_offset : eOffset+1,filter:filter}))
+      dispatch(getAgentEarnings({e_offset : eOffset+1,startDate:startDate,endDate:endDate}))
       setLOffset(eOffset+1)
     }
     
@@ -216,6 +227,46 @@ type Props = {
       props?.navigation?.navigate('LaundryHistoryDetail',{unique_request_id:unique_id})
     }
   }
+
+  const onChangeFrom = (event, selectedDate) => {
+    const currentDate = selectedDate || dateFrom;
+    setShowFrom(false);
+    setDateFrom(currentDate);
+    setMinDate(new Date(selectedDate))
+    setStartDate(moment(selectedDate).format('DD-MM-YYYY'))
+    if(endDate != ''){
+      setLOffset(0);
+      setMOffset(0);
+      setEOffset(0);
+      setLlist([]);
+      setMlist([]);
+      setElist([])
+      dispatch(showLoader());
+      dispatch(getAgentHistoryMoney({m_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getAgentHistoryLaundry({l_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getAgentEarnings({e_offset : 0,startDate:startDate,endDate:endDate}))
+    }
+  }
+
+  const onChangeTo = (event, selectedDate) => {
+    const currentDate = selectedDate || dateTo;
+    setShowTo(false);
+    setDateTo(currentDate);
+    setEndDate(moment(selectedDate).format('DD-MM-YYYY'))
+    if(startDate != ''){
+      setLOffset(0);
+      setMOffset(0);
+      setEOffset(0);
+      setLlist([]);
+      setMlist([]);
+      setElist([])
+      dispatch(showLoader());
+      dispatch(getAgentHistoryMoney({m_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getAgentHistoryLaundry({l_offset : 0,startDate:startDate,endDate:endDate}))
+      dispatch(getAgentEarnings({e_offset : 0,startDate:startDate,endDate:endDate}))
+    }
+  }
+ 
      
     return (
       <Container>
@@ -223,43 +274,52 @@ type Props = {
         <View style={[common.pl20, common.mt15, common.pb10]}>
           <Text style={[common.fontxxl]}>History</Text>
         </View>
-        <View style={[common.flexrow,common.pl20,{justifyContent:"flex-end"}]}>
+        <View style={[common.flexrow,common.pl20,{justifyContent:"flex-start",paddingBottom:10}]}>
           <Text style={{fontWeight:"bold"}}>Filter By Date:</Text>
-          {
-            Platform.OS === 'ios'
-            &&
-            <Text style={common.pr10} onPress={()=>toggleModal()}>{filter}</Text>
-          }
-          {
-            Platform.OS === 'android'
-            &&
-            <Picker
-              selectedValue={filter}
-              style={{height: 50, width: 100,marginTop:-14}}
-              onValueChange={(itemValue, itemIndex) =>{
-                setFilter(itemValue)
-                setLOffset(0);
-                setMOffset(0);
-                setEOffset(0);
-                setLlist([]);
-                setMlist([]);
-                setElist([])
-                dispatch(showLoader());
-                dispatch(getAgentHistoryMoney({m_offset : 0,filter:itemValue}))
-                dispatch(getAgentHistoryLaundry({l_offset : 0,filter:itemValue}))
-                dispatch(getAgentEarnings({e_offset : 0,filter:itemValue}))
-              }
-              }>
-              {filterArray?.length > 0 && filterArray?.map((item,index)=>{
-                return(
-                  <Picker.Item key={index} label={item} value={item} />
-                )
-              })}
-            
-            
-            </Picker>
-          }
+        
+         
         </View>
+        <View style={[common.flexrow,common.pl20,common.pr20,{justifyContent:"flex-end"}]}>
+            <Text style={common.pr10}>From:</Text>
+            {
+              startDate != ''
+              &&
+              <Text style={common.pr5} >{moment(startDate).format('DD-MM-YYYY')}</Text>
+            }
+            
+            <Text style={[common.pr5,{marginTop:-5}]} onPress={()=>setShowFrom(true)}><Icon name="calendar" type="Entypo"/></Text>
+              {showFrom && (
+                <DateTimePicker
+                  testID="dateTimePickerFrom"
+                  value={dateFrom}
+                  mode={"date"}
+                  is24Hour={true}
+                  display="default"
+                  maximumDate={new Date()}
+                  onChange={onChangeFrom}
+                />
+              )}
+              <Text style={common.pr10}>To:</Text>
+              {
+                endDate != ''
+                &&
+                <Text style={common.pr10} >{moment(endDate).format('DD-MM-YYYY')}</Text>
+              }
+              
+              <Text style={[{marginTop:-5}]} onPress={()=>setShowTo(true)}><Icon name="calendar" type="Entypo"/></Text>
+              {showTo && (
+                <DateTimePicker
+                  testID="dateTimePickerTo"
+                  value={dateTo}
+                  mode={"date"}
+                  is24Hour={true}
+                  maximumDate={new Date()}
+                  minimumDate={minDate}
+                  display="default"
+                  onChange={onChangeTo}
+                />
+              )}
+          </View>
         <Tabs tabBarUnderlineStyle={[{ backgroundColor:'#48c6f3',}]}
            tabContainerStyle={{elevation: 0}}
         >
@@ -399,7 +459,7 @@ type Props = {
               }
               
               {
-                mlist?.length == 0
+                llist?.length == 0
                 &&
                 <View>
                   <Text style={{textAlign:"center",marginTop:30}}>No Requests to show. </Text>
@@ -419,6 +479,11 @@ type Props = {
              
            {
                 elist?.length>0 &&
+            <View>
+
+           <View style={{paddingLeft:30,paddingTop:30}}>
+             <Text style={{fontWeight:"bold"}}>Total Earned:<Text> $ {agentEarning?.total_earnings}</Text></Text>
+           </View>
                  
         <FlatList
             style={[theme.bggray]}
@@ -429,7 +494,7 @@ type Props = {
            <View style={[theme.listCard]}>
               <View style={[common.flexbox, common.flexrow, common.p10, common.pb0]}>
                 <View style={[common.flexone]}>
-                  <Text style={[common.fontlg, ]}>{item.total_amount}</Text>
+                  <Text style={[common.fontlg, ]}>$ {item?.request_detail[0]?.delivery_fee}</Text>
                   {
                     item.service_type == 'money'
                     &&
@@ -479,6 +544,7 @@ type Props = {
                 onEndReached = {()=>{getMoreEarningData()}}
                  
             />
+             </View>
            }
            {
               elist?.length == 0
@@ -490,39 +556,7 @@ type Props = {
         
           </Tab>
         </Tabs>
-        <Modal isVisible={isModalVisible}>
-          <View style={[common.flexbox]}>
-            <View style={[theme.boxmodel]}>
-            <Picker
-                  selectedValue={filter}
-                  style={{height: 150, width: '100%',marginTop:-30}}
-                  onValueChange={(itemValue, itemIndex) =>{
-                    toggleModal()
-                    setFilter(itemValue)
-                    setLOffset(0);
-                    setMOffset(0);
-                    setEOffset(0);
-                    setLlist([]);
-                    setMlist([]);
-                    setElist([])
-                    dispatch(showLoader());
-                    dispatch(getAgentHistoryMoney({m_offset : 0,filter:itemValue}))
-                    dispatch(getAgentHistoryLaundry({l_offset : 0,filter:itemValue}))
-                    dispatch(getAgentEarnings({e_offset : 0,filter:itemValue}))
-                  }
-                  }>
-                  {filterArray?.length > 0 && filterArray?.map((item,index)=>{
-                    return(
-                      <Picker.Item key={index} label={item} value={item} />
-                    )
-                  })}
-                
-                
-                </Picker>
-            
-            </View>
-          </View>
-        </Modal>
+        
       </Container>
     );
   }

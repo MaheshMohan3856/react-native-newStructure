@@ -72,11 +72,13 @@ type Props = {
  const HomePage = (props:Props) => {
 
 
-  const [token,setToken] = useState('');
-  const [refreshToken,setRefreshToken] = useState('');
+ 
   const isFocused = useIsFocused();
   const dispatch = useDispatch();
   const [error,setError] = useState('')
+
+  // const [token,setToken] = useState('')
+  // const [refreshToken,setRefreshToken] = useState('')
 
   const [name,setName] = useState('')
   const [isagent,setIsagent] = useState(false)
@@ -99,7 +101,8 @@ type Props = {
 
 
   
-
+  const refreshToken = useSelector((state:RootState)=>state.token_r._token.refreshtoken);
+  const token = useSelector((state:RootState)=>state.token_r._token.token);
 
   
   useEffect(()=>{
@@ -108,12 +111,12 @@ type Props = {
         LocationServicesDialogBox.checkLocationServicesIsEnabled({
           message: "<h2 style='color: #0af13e'>Use Location ?</h2>WUW wants to change your device settings:<br/><br/>Use GPS for better performance<br/><br/>",
           ok: "YES",
-          cancel: "NO",
+           cancel: "",
           enableHighAccuracy: true, // true => GPS AND NETWORK PROVIDER, false => GPS OR NETWORK PROVIDER
           showDialog: true, // false => Opens the Location access page directly
           openLocationServices: true, // false => Directly catch method is called if location services are turned off
-          preventOutSideTouch: false, // true => To prevent the location services window from closing when it is clicked outside
-          preventBackClick: false, // true => To prevent the location services popup from closing when it is clicked back button
+          preventOutSideTouch: true, // true => To prevent the location services window from closing when it is clicked outside
+          preventBackClick: true, // true => To prevent the location services popup from closing when it is clicked back button
           providerListener: false // true ==> Trigger locationProviderStatusChange listener when the location state changes
       }).then(function(success) {
           console.log(success); // success => {alreadyEnabled: false, enabled: true, status: "enabled"}
@@ -139,7 +142,26 @@ type Props = {
    
     const unsubscribe = props.navigation.addListener('focus', () => {
 
-     // socketConnection('connect');
+      console.log("token",token);
+      console.log("refreshToken",refreshToken);
+   
+      const  socket = io(appConfig.apiSocketBaseUrl,{query:{token,refreshToken}})
+  
+      socket.on('connect',function(){
+        console.log("connected",socket.connected);
+      });
+      socket.on('connect_error',function(data){
+         console.log('errrrrrrooorrr',data)
+      })
+      storage.load({key:'userData'}).then((ret)=>{
+        console.log('ret.email',ret.email);
+        socket.on(ret.email,function(data){
+          console.log("data",data);
+          if(data?.cmd == 'money_request_status_change' || data?.cmd ==  "laundry_request_status_update" ){
+            dispatch(checkStatus())
+          }
+        })
+      })
      
       storage.load({key:'userData'}).then((ret)=>{
         setName(ret.first_name)
@@ -147,15 +169,15 @@ type Props = {
         if(ret.is_agent==true)
             setIsagent(true)
        }) 
-       appConfig.functions.isLoggedin()
-       .then((token)=>{
-         appConfig.functions.getRefresh()
-         .then((refreshToken)=>{
-            setToken(token);
-            setRefreshToken(refreshToken)
-         })
+      //  appConfig.functions.isLoggedin()
+      //  .then((token)=>{
+      //    appConfig.functions.getRefresh()
+      //    .then((refreshToken)=>{
+      //       setToken(token);
+      //       setRefreshToken(refreshToken)
+      //    })
           
-       }) 
+      //  }) 
        dispatch(showLoader())
        dispatch(checkStatus())
 
@@ -175,13 +197,14 @@ type Props = {
             dispatch(getLaundryList({search_key:''}))
           
         })
-  
+        const unsubscribeblur = props.navigation.addListener('blur', () => {
+          console.log('blurrrrr');
+          socket.emit('manual_disconnect')
+       })
+       return unsubscribeblur;
        
     });
-    // const unsubscribeBlur = props.navigation.addListener('blur', () => {
-    //   socketConnection('disconnect');
-      
-    // })
+   
    
     
     return unsubscribe;
@@ -220,14 +243,16 @@ type Props = {
   },[checked])
 
   const homelist = useSelector((state:RootState)=>state.home_r._homelist);
+  console.log("homelist",homelist);
 
   useEffect(()=>{
+    console.log("aaaaaaa");
      if(homelist != undefined){
       dispatch(hideLoader());
      
-     
+      console.log("bbbbbb");
        if(homelist.status == true){
-         
+        console.log("ccccccc");
         setList(homelist.laundromat_list);
        }else{
          appConfig.functions.showError(homelist.message)

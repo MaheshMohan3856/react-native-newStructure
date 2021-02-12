@@ -231,7 +231,14 @@ const [refreshToken,setRefreshToken] = useState(props?.route?.params?.refreshTok
           </Right>
         </Header>
         </View>
-        <ScrollView>
+        <ScrollView contentContainerStyle={{flexGrow: 1}}>
+        <View  style={{
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              height: '100%',
+            }}>
+        <View style={{flex:3}}>
         <View style={[common.p20,{backgroundColor:"#00AFEF"}]}>
           <Text style={[common.fontlg,common.white]}>Order #{data?.unique_id}</Text>
         </View>
@@ -323,7 +330,8 @@ const [refreshToken,setRefreshToken] = useState(props?.route?.params?.refreshTok
             />
           </View>
         </View>
-
+        </View>
+        <View style={{flex: 1}}>
         <View style={[theme.section_blue]}>
           <View style={[common.flexbox, common.flexrow, common.p20]}>
             <View style={[common.flexone, common.pl10, common.pr10]}>
@@ -396,16 +404,21 @@ const [refreshToken,setRefreshToken] = useState(props?.route?.params?.refreshTok
                 </Text>
               </Body>
               <Right style={[common.bordernone]}>
-                <Icon
+                {/* <Icon
                   style={[common.fontxl, common.white, {opacity: 0.3}]}
                   name="keyboard-arrow-right"
                   type="MaterialIcons"
-                />
+                /> */}
               </Right>
             </ListItem>
           </View>
 
-          <Modal isVisible={isModalVisible}>
+         
+        </View>
+        </View>
+        </View>
+        </ScrollView>
+        <Modal isVisible={isModalVisible}>
             <View style={[common.flexbox]}>
               <View style={[theme.boxmodel]}>
                 <Text
@@ -448,8 +461,6 @@ const [refreshToken,setRefreshToken] = useState(props?.route?.params?.refreshTok
               </View>
             </View>
           </Modal>
-        </View>
-        </ScrollView>
       </Container>
     );
   }

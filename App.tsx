@@ -7,6 +7,7 @@
  */
 
 import React,{useRef,useState,useEffect} from 'react';
+
 import {
   SafeAreaView,
   StyleSheet,
@@ -27,13 +28,50 @@ import {
 import FlashMessage from "react-native-flash-message";
 import {Root} from 'native-base'
 import 'react-native-gesture-handler';
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer,useNavigation} from '@react-navigation/native';
 import AppNavigator from './app/routeConfig';
 import { Provider as StoreProvider } from 'react-redux';
-import store from './app/store';
+
 import Loading from './app/components/shared/loader';
+import { compose,createStore,applyMiddleware } from 'redux';
+
+import { apiMiddleware } from 'redux-api-middleware';
+import thunk from 'redux-thunk';
+import logger from 'redux-logger';
+import AppReducer from './app/appReducers'
+
+
+let _navigator:any
+
+const setTopLevelNavigator = (ref) =>{
+  _navigator = ref
+}
+
+
+
+ 
+const customMiddleWare = store => next => action => {
+   
+  //console.log("Middleware triggered: store: ",store.getState(), "action: ", action);
+   if(action.result != undefined && action.result.user_active_status == false){
+     _navigator.navigate('LandingPage')
+   }
+   
+   next(action);
+ }
+
+const configureStore = (initialState:object) =>{
+
+   const enhance = compose(applyMiddleware(thunk,logger,apiMiddleware,customMiddleWare))   
+   return createStore( AppReducer,initialState, enhance);
+}
+
+const store = configureStore({});
 
 const App = () => {
+
+
+
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
 
@@ -64,7 +102,9 @@ const App = () => {
     <Root>
       <Loading />
       
-     <NavigationContainer>
+     <NavigationContainer ref={navigatorRef => {
+          setTopLevelNavigator(navigatorRef);
+        }}>
        <AppNavigator />
      </NavigationContainer>
      <FlashMessage style={{marginTop:20}} position="top" duration={3000} />

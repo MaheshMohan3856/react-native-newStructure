@@ -147,8 +147,8 @@ const LaundryInvoice = (props:Props) => {
            var track:Array<any> = []
            console.log("ordered?.data?",ordered?.order_data)
             setData(ordered?.order_data)
-            setCardToken(ordered?.order_data?.cards[0].id);
-            setLastFour(ordered?.order_data?.cards[0].last4)
+            setCardToken(ordered?.order_data?.cards[0]?.id);
+            setLastFour(ordered?.order_data?.cards[0]?.last4)
             var a:Array<any> = [];
             ordered?.order_data?.cards?.length>0 && ordered?.order_data?.cards.map((item,index)=>{
 

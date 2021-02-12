@@ -39,7 +39,7 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
-import firestore from '@react-native-firebase/firestore';
+
 import { useDispatch, useSelector } from 'react-redux';
 import HeaderPage from './shared/header';
 import { hideLoader, showLoader } from '../actions/common/commonActions';
@@ -90,16 +90,7 @@ const LaundryConfirm = (props:Props) =>  {
       final_apprx_price: details?.pricing?.final_apprx_price,
       comment:comment
     }
-    firestore()
-    .collection('Users')
-    .add({
-      
-      latitude: details?.pickup_latitude,
-      longitude:details?.pickup_longitude
-    })
-    .then(() => {
-      console.log('User added!');
-    });
+    
       dispatch(showLoader());
       dispatch(confirmPick(datas))
     }

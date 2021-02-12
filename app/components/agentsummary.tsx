@@ -90,10 +90,11 @@ const AgentSummary = (props:Props) => {
    
     var endtime = new Date(starttime);
    
-    var splittime = interval.split('.');
-  
-    endtime.setHours( endtime.getHours() + parseInt(splittime[0]) );
-    if(splittime[1] != undefined){
+    var splittime = interval?.split('.');
+    if(splittime && splittime[0] != undefined){
+     endtime.setHours( endtime.getHours() + parseInt(splittime[0]) );
+    }
+    if(splittime && splittime[1] != undefined){
       endtime.setMinutes(endtime.getMinutes() + 30)
     }
     var time = endtime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -188,8 +189,13 @@ const AgentSummary = (props:Props) => {
               </View>
               <View style={[common.flexone,common.center]}>
               <View style={[common.flexbox,common.flexrow]}>
-              <Text style={[common.center,common.fontbold,common.fontlg,common.colorblack,]}>{getDeliveryTime(summary?.created_date,summary?.time_duration)}</Text>
-                {/* <Text style={[common.center,common.fontbold,common.fontbody,common.colorblack,common.pt5]}></Text> */}
+                {
+                  Object.keys(summary).length != 0
+                  &&
+                  <Text style={[common.center,common.fontbold,common.fontlg,common.colorblack,]}>{getDeliveryTime(summary?.created_date,summary?.time_duration)}</Text>
+                }
+             
+                {/* <Text style={[common.center,common.fontbold,common.fontbody,common.colorblack,common.pt5]}></Text> getDeliveryTime(summary?.created_date,summary?.time_duration)*/}
               </View>
                 <Text style={[common.center,common.fontxs,common.colorblack]}>DELIVERED TIME</Text>
               </View>

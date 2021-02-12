@@ -362,7 +362,7 @@ const LaundrySchedule = (props:Props) => {
                       bordered
                       rounded
                       style={[theme.borderblue, common.pl5,common.pr5,common.mt10,common.fontxs,{height:30}]}>
-                      <Text style={[theme.bluecolor]}>
+                      <Text style={[theme.bluecolor,]}>
                       Available
                       </Text>
                     </Button>

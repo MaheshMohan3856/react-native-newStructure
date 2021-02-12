@@ -28,6 +28,7 @@ import {
 
 import {theme} from '../css/theme';
 import {common} from '../css/common';
+import {saveToken} from '../actions/token/tokenActions';
 import CountryPicker from 'react-native-country-picker-modal';
 import {showLoader, hideLoader} from '../actions/common/commonActions';
 import {appConfig} from '../appConfig';
@@ -156,6 +157,13 @@ useEffect(()=>{
   if(signUpped != undefined){
     dispatch(hideLoader())
     if(signUpped.status == true){
+      appConfig.functions.isLoggedin()
+      .then((token)=>{
+             appConfig.functions.getRefresh()
+             .then((refreshtoken)=>{
+               dispatch(saveToken({token:token,refreshtoken:refreshtoken}))
+             })
+         })
       storage.save({
         key:"userData",
         data:signUpped.user_details,

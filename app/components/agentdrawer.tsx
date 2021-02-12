@@ -101,84 +101,90 @@ const AgentDrawer = (props:Props) => {
 
   useEffect(()=>{
     
-    
-    const message = firebase.messaging()
-   const unsubscribe = message.onMessage(remoteMessage=>{
-      console.log(
-        'Notification caused app to open from foreground state:',
-        remoteMessage.notification,
-      );
-     //appConfig.functions.successMsg(remoteMessage?.notification?.body)
-     // displayNotification(remoteMessage.notification)
-     showMessage({
-      message: remoteMessage?.notification?.title,
-      description: remoteMessage?.notification?.body,
-      type: "info",
-      backgroundColor: "#00AFEF", // background color
-      color: "#fff",
-      onPress: () => {
-        /* THIS FUNC/CB WILL BE CALLED AFTER MESSAGE PRESS */
-      },
-    });
-     
-    })
-    messaging().onNotificationOpenedApp(remoteMessage => {
-      console.log(
-        'Notification caused app to open from background state:',
-        JSON.parse(remoteMessage?.data?.custom_notification)
-      );
-       let notificationed = JSON.parse(remoteMessage?.data?.custom_notification);
-        if(notificationed.type == "money_request_list"){
-          props.navigation.navigate('AgentHome')
-          dispatch(getRequestList())
-        }else if(notificationed.type == "money_request_detail"){
-          props.navigation.navigate('TrackStatus',{unique_request_id:notificationed.push_data.request_id})
-          dispatch(getMoneyOrderDetails({type : "money",unique_request_id :notificationed.push_data.request_id}))
-        }else if(notificationed.type == "laundry_request_detail"){
-          props.navigation.navigate('LaundryInvoice',{unique_request_id:notificationed.push_data.request_id})
-          dispatch(getOrderDetails({unique_laundry_request_id : notificationed.push_data.request_id}))
-        }else if(notificationed.type == "laundromat_invoice_detail"){
-          props.navigation.navigate('LaundryInvoice',{unique_request_id:notificationed.push_data.request_id})
-          dispatch(getOrderDetails({unique_laundry_request_id : notificationed.push_data.request_id}))
-        } 
-     
-    });
-
-   // Check whether an initial notification is available
-    messaging()
-      .getInitialNotification()
-      .then(remoteMessage => {
-        if (remoteMessage) {
-          console.log(
-            'Notification caused app to open from quit state:',
-            JSON.parse(remoteMessage?.data?.custom_notification)
-          );
-          let notificationed = JSON.parse(remoteMessage?.data?.custom_notification);
+    const unsubscribe = props.navigation.addListener('focus', () => {
+      const message = firebase.messaging()
+      const unsubscribeforeground = message.onMessage(remoteMessage=>{
+        console.log(
+          'Notification caused app to open from foreground state:',
+          remoteMessage.notification,
+        );
+      //appConfig.functions.successMsg(remoteMessage?.notification?.body)
+      // displayNotification(remoteMessage.notification)
+      showMessage({
+        message: remoteMessage?.notification?.title,
+        description: remoteMessage?.notification?.body,
+        type: "info",
+        backgroundColor: "#00AFEF", // background color
+        color: "#fff",
+        onPress: () => {
+          /* THIS FUNC/CB WILL BE CALLED AFTER MESSAGE PRESS */
+        },
+      });
+      
+      })
+      messaging().onNotificationOpenedApp(remoteMessage => {
+        console.log(
+          'Notification caused app to open from background state:',
+          JSON.parse(remoteMessage?.data?.custom_notification)
+        );
+        let notificationed = JSON.parse(remoteMessage?.data?.custom_notification);
           if(notificationed.type == "money_request_list"){
             props.navigation.navigate('AgentHome')
+            dispatch(getRequestList())
           }else if(notificationed.type == "money_request_detail"){
             props.navigation.navigate('TrackStatus',{unique_request_id:notificationed.push_data.request_id})
+            dispatch(getMoneyOrderDetails({type : "money",unique_request_id :notificationed.push_data.request_id}))
           }else if(notificationed.type == "laundry_request_detail"){
             props.navigation.navigate('LaundryInvoice',{unique_request_id:notificationed.push_data.request_id})
+            dispatch(getOrderDetails({unique_laundry_request_id : notificationed.push_data.request_id}))
           }else if(notificationed.type == "laundromat_invoice_detail"){
             props.navigation.navigate('LaundryInvoice',{unique_request_id:notificationed.push_data.request_id})
+            dispatch(getOrderDetails({unique_laundry_request_id : notificationed.push_data.request_id}))
           } 
+      
+      });
+
+    // Check whether an initial notification is available
+      messaging()
+        .getInitialNotification()
+        .then(remoteMessage => {
+          if (remoteMessage) {
+            console.log(
+              'Notification caused app to open from quit state:',
+              JSON.parse(remoteMessage?.data?.custom_notification)
+            );
+            let notificationed = JSON.parse(remoteMessage?.data?.custom_notification);
+            if(notificationed.type == "money_request_list"){
+              props.navigation.navigate('AgentHome')
+            }else if(notificationed.type == "money_request_detail"){
+              props.navigation.navigate('TrackStatus',{unique_request_id:notificationed.push_data.request_id})
+            }else if(notificationed.type == "laundry_request_detail"){
+              props.navigation.navigate('LaundryInvoice',{unique_request_id:notificationed.push_data.request_id})
+            }else if(notificationed.type == "laundromat_invoice_detail"){
+              props.navigation.navigate('LaundryInvoice',{unique_request_id:notificationed.push_data.request_id})
+            } 
+          }
+          
+        });
+      storage.load({key:'userData'}).then((ret)=>{
+        setFirstname(ret.first_name)
+        setLastname(ret.last_name)
+        setPhone(ret.phone)
+        setCode(ret.phone_prefix)
+        setImage(ret.profile_image != undefined?ret.profile_image:'')
+        if(ret.is_agent){
+          setIsAgent(ret.is_agent)
         }
         
-      });
-    storage.load({key:'userData'}).then((ret)=>{
-      setFirstname(ret.first_name)
-      setLastname(ret.last_name)
-      setPhone(ret.phone)
-      setCode(ret.phone_prefix)
-      setImage(ret.profile_image != undefined?ret.profile_image:'')
-      if(ret.is_agent){
-        setIsAgent(ret.is_agent)
-      }
-      
+      })
+      const unsubscribeblur = props.navigation.addListener('blur', () => {
+        console.log('blurrrrr');
+        return unsubscribeforeground
+      })
+      return unsubscribeblur;
     })
-    //return unsubscribe
-  },[])
+    return unsubscribe
+  },[props.navigation])
 
   const agentBecame = useSelector((state:RootState)=>state.agentregister_r._agentBecame)
 
